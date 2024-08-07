@@ -25,11 +25,15 @@ spec:
     spec:
       containers:
         - env:
-            - name: POSTGRES_PASSWORD
-              value: betting
             - name: POSTGRES_USER
+              value: postgres
+            - name: BETTING_DB_PASSWORD
               value: betting
-          image: postgres:latest
+            - name: BETTING_DB_USER
+              value: betting
+            - name: BETTING_DB_NAME
+              value: betting                
+          image: skyglass/postgres-betting:latest
           name: postgres-betting-db
           ports:
             - containerPort: 5432
