@@ -150,4 +150,5 @@ target/
 .springBeans
 src/main/resources/static/
 
-### Test ##
+env/
+skaffold*.yaml
