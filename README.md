@@ -99,7 +99,7 @@ These commands will install nginx ingress controller to your local kubernetes cl
 - create `.env.local` file in `env` folder and provide the following parameters:
 
 ```
-CONTAINER_REGISTRY="eventbooking.azurecr.io" (provide your own container registry, see **Azure Production Environment Setup** for more details)
+CONTAINER_REGISTRY="bettinghouse.azurecr.io" (provide your own container registry, see **Azure Production Environment Setup** for more details)
 DOCKER_FILE_NAME="Dockerfile"
 DOCKER_PUSH="false"
 VERSION="latest"
@@ -148,7 +148,7 @@ location = "westeurope" (use any other azure location, for example, "germanywest
 
 - cd to `infra` folder
 
-- replace `eventbooking` with your own globally unique name (see files `container-registry.tf`, `kubernetes-cluster.tf` and `resource-group.tf`)
+- replace `bettinghouse` with your own globally unique name (see files `container-registry.tf`, `kubernetes-cluster.tf` and `resource-group.tf`)
 
 - run `terraform init`and `terraform apply --auto-approve`
 
@@ -175,7 +175,7 @@ docker login {login_server}
 - in `env` folder create `.env.prod` file and set the following environment variables:
 
 ```
-CONTAINER_REGISTRY="eventbooking.azurecr.io"  (provide your own globally unique container registry)
+CONTAINER_REGISTRY="bettinghouse.azurecr.io"  (provide your own globally unique container registry)
 DOCKER_FILE_NAME="Dockerfile-prod"
 DOCKER_PUSH="true"
 VERSION="latest"

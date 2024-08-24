@@ -151,4 +151,4 @@ target/
 src/main/resources/static/
 
 env/
-skaffold*.yaml
+skaffold.yaml

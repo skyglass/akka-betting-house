@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: betting-house-postgres-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: betting-house-postgres
+  template:
+    metadata:
+      labels:
+        app: betting-house-postgres
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres              
+            - name: BETTING_DB_PASSWORD
+              value: betting
+            - name: BETTING_DB_USER
+              value: betting
+            - name: BETTING_DB_NAME
+              value: betting
+          image: $CONTAINER_REGISTRY/betting-house-postgres:$VERSION
+          name: betting-house-postgres
+          ports:
+            - containerPort: 5432
+          resources: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: betting-house-postgres-srv
+spec:
+  selector:
+    app: betting-house-postgres
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432

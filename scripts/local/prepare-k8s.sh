@@ -10,15 +10,9 @@ else
 fi
 
 set -u # or set -o nounset
-: "$JWT_KEY"
-: "$STRIPE_KEY"
 : "$BASE_URL"
 
-kubectl delete secret stripe-secret
-kubectl delete secret jwt-secret
 kubectl delete configmap base-url-config
-kubectl create secret generic stripe-secret --from-literal=STRIPE_KEY=$STRIPE_KEY
-kubectl create secret generic jwt-secret --from-literal=JWT_KEY=$JWT_KEY
 kubectl create configmap base-url-config --from-literal=BASE_URL=$BASE_URL
 
 # Temporary directory for the processed manifests

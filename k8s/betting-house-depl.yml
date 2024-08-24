@@ -25,7 +25,7 @@ spec:
       serviceAccountName: my-cluster # check this name is right
       containers:
       - name: my-container-name
-        image: skyglass/betting-house:0.1.0-SNAPSHOT
+        image: $CONTAINER_REGISTRY/betting-house:$VERSION
         # Remove for a real project, the image is picked up locally for the integratio test
         imagePullPolicy: Always 
         #health
