@@ -1,4 +1,4 @@
 #!/bin/bash
 
-sh ./scripts/production/prepare-k8s.sh
+sh ./scripts/local/prepare-k8s.sh
 skaffold dev

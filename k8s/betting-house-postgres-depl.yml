@@ -17,15 +17,10 @@ spec:
             - name: POSTGRES_USER
               value: postgres
             - name: POSTGRES_PASSWORD
-              value: postgres              
-            - name: BETTING_DB_PASSWORD
-              value: betting
-            - name: BETTING_DB_USER
-              value: betting
-            - name: BETTING_DB_NAME
-              value: betting
+              value: dbpass
           image: $CONTAINER_REGISTRY/betting-house-postgres:$VERSION
           name: betting-house-postgres
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
           resources: {}

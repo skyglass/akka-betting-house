@@ -1,3 +1,5 @@
+\c betting
+
 DROP TABLE IF EXISTS public.bet_wallet_market;
 
 CREATE TABLE IF NOT EXISTS public.bet_wallet_market(

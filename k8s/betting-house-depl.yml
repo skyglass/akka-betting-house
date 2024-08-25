@@ -27,7 +27,7 @@ spec:
       - name: my-container-name
         image: $CONTAINER_REGISTRY/betting-house:$VERSION
         # Remove for a real project, the image is picked up locally for the integratio test
-        imagePullPolicy: Always 
+        imagePullPolicy: IfNotPresent
         #health
         livenessProbe:
           httpGet:
