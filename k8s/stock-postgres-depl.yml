@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-postgres-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stock-postgres
+  template:
+    metadata:
+      labels:
+        app: stock-postgres
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: dbpass
+          image: $CONTAINER_REGISTRY/stock-postgres:$VERSION
+          name: stock-postgres
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          resources: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-postgres-srv
+spec:
+  selector:
+    app: stock-postgres
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432

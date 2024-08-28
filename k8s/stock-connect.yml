@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-connect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stock-connect
+  template:
+    metadata:
+      labels:
+        app: stock-connect
+      containers:
+      - name: stock-connect
+        image: debezium/connect:2.2
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GROUP_ID
+          value: 1
+        - name: CONFIG_STORAGE_TOPIC
+          value: "connect_configs"
+        - name: OFFSET_STORAGE_TOPIC
+          value: "connect_offsets"
+        - name: STATUS_STORAGE_TOPIC
+          value: "connect_statuses"          
+        - name: BOOTSTRAP_SERVERS
+          value: "stock-kafka1:29092,stock-kafka2:29093"
+        - name: JMXPORT
+          value: 9012
+        - name: JMXHOST
+          value: "stock-connect"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stock-connect
+spec:
+  selector:
+    app: stock-connect
+  ports:
+  - port: 8080
+    targetPort: 8080

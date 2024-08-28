@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-postgres-dbcreation-script
+data:
+  keycloak-db.sql: |
+    CREATE DATABASE keycloak;

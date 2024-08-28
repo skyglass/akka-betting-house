@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-redis
+  labels:
+    db: gateway-redis
+spec:
+  selector:
+    matchLabels:
+      db: gateway-redis
+  template:
+    metadata:
+      labels:
+        db: gateway-redis
+    spec:
+      containers:
+      - name: gateway-redis
+        image: redis:7.0
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "50Mi"
+          limits:
+            cpu: "200m"
+            memory: "100Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-redis
+  labels:
+    db: gateway-redis
+spec:
+  selector:
+    db: gateway-redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379            
