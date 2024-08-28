@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: inventory
-        image: ghcr.io/greeta-twitter-01/inventory-service:a70d805cea056c33014758aa36f9b5f3734d11c8
+        image: $CONTAINER_REGISTRY/inventory-service:$VERSION
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9002

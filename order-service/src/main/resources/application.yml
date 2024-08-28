@@ -72,7 +72,7 @@ app:
     password: dbpass
 
   kafka:
-    brokers: "stock-kafka1:29092,stock-kafka2:29093"
+    brokers: ""my-cluster-kafka-bootstrap:9092"
 
 logging:
   pattern:

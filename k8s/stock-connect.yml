@@ -26,7 +26,7 @@ spec:
         - name: STATUS_STORAGE_TOPIC
           value: "connect_statuses"          
         - name: BOOTSTRAP_SERVERS
-          value: "stock-kafka1:29092,stock-kafka2:29093"
+          value: "my-cluster-kafka-bootstrap:9092"
         - name: JMXPORT
           value: 9012
         - name: JMXHOST
