@@ -49,10 +49,10 @@ spring:
     stream:
       default:
         producer:
-          partition-count: 2
+          partition-count: 1
           retry-count: 5
         consumer:
-          concurrency: 2
+          concurrency: 1
       bindings:
         handleReserveCustomerBalanceRequest-in-0:
           destination: ORDER.events
@@ -63,7 +63,7 @@ spring:
       kafka:
         binder:
           autoCreateTopics: true
-          replicationFactor: 2
+          replicationFactor: 1
           brokers: ${app.kafka.brokers}
 
 

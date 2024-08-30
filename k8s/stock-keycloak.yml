@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: keycloak-server
+  name: stock-keycloak
   labels:
-    app: keycloak-server
+    app: stock-keycloak
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: keycloak-server
+      app: stock-keycloak
   template:
     metadata:
       labels:
-        app: keycloak-server
+        app: stock-keycloak
     spec:
       containers:
-      - name: keycloak-server
+      - name: stock-keycloak
         image: quay.io/keycloak/keycloak:22.0.1
         args: ["start-dev"]
         ports:
@@ -39,15 +39,25 @@ spec:
           value: "postgres"
         - name: KC_PROXY
           value: "edge"
+        - name: KC_HTTP_RELATIVE_PATH
+          value: "/keycloak"          
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        - name: KC_HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              name: base-url-config
+              key: BASE_URL
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: keycloak-server
+  name: stock-keycloak
 spec:
   selector:
-    app: keycloak-server
+    app: stock-keycloak
   ports:
   - port: 8080
-    targetPort: 8080          
+    protocol: TCP
+    targetPort: 8080

@@ -45,10 +45,10 @@ spring:
     stream:
       default:
         producer:
-          partition-count: 2
+          partition-count: 1
           retry-count: 5
         consumer:
-          concurrency: 2
+          concurrency: 1
       bindings:
         reserveCustomerBalanceStage-in-0:
           destination: CUSTOMER.events
@@ -59,7 +59,7 @@ spring:
       kafka:
         binder:
           autoCreateTopics: true
-          replicationFactor: 2
+          replicationFactor: 1
           brokers: ${app.kafka.brokers}
 
 
@@ -72,7 +72,7 @@ app:
     password: dbpass
 
   kafka:
-    brokers: ""my-cluster-kafka-bootstrap:9092"
+    brokers: "my-cluster-kafka-bootstrap:9092"
 
 logging:
   pattern:

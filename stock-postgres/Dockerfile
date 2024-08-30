@@ -1,4 +1,4 @@
-FROM debezium/postgres:15
+FROM debezium/postgres:16
 
 ENV TZ=Europe/Amsterdam
 ENV PGTZ=Europe/Amsterdam

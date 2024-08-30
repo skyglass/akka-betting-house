@@ -10,38 +10,24 @@ spec:
     - host: localhost
       http:
         paths:
-          - path: /api/payments/?(.*)
+          - path: /keycloak/?(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: payments-srv
+                name: stock-keycloak
                 port:
-                  number: 3000
-          - path: /api/users/?(.*)
+                  number: 8080
+          - path: /kafka/?(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: auth-srv
+                name: kafka-ui
                 port:
-                  number: 3000
-          - path: /api/tickets/?(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: tickets-srv
-                port:
-                  number: 3000
-          - path: /api/orders/?(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: orders-srv
-                port:
-                  number: 3000
+                  number: 8081
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: client-srv
+                name: gateway
                 port:
-                  number: 3000
+                  number: 9000

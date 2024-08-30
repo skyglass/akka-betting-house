@@ -11,14 +11,15 @@ spec:
     metadata:
       labels:
         app: stock-connect
+    spec:        
       containers:
       - name: stock-connect
         image: debezium/connect:2.2
         ports:
-        - containerPort: 8080
+        - containerPort: 8082
         env:
         - name: GROUP_ID
-          value: 1
+          value: "1"
         - name: CONFIG_STORAGE_TOPIC
           value: "connect_configs"
         - name: OFFSET_STORAGE_TOPIC
@@ -28,7 +29,7 @@ spec:
         - name: BOOTSTRAP_SERVERS
           value: "my-cluster-kafka-bootstrap:9092"
         - name: JMXPORT
-          value: 9012
+          value: "9012"
         - name: JMXHOST
           value: "stock-connect"
 
@@ -41,5 +42,5 @@ spec:
   selector:
     app: stock-connect
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8082
+    targetPort: 8082

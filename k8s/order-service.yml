@@ -30,10 +30,15 @@ spec:
           value: "true"
         - name: BPL_DEBUG_PORT
           value: "8003"
+        - name: BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: base-url-config
+              key: BASE_URL
         - name: SPRING_KEYCLOAK_SERVER_URL
           value: "http://stock-keycloak:8080"
         - name: SPRING_KEYCLOAK_SERVER_EXTERNAL_URL
-          value: "http://localhost:8080"          
+          value: "$(BASE_URL)/keycloak"
         lifecycle:
           preStop:
             exec:
