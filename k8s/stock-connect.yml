@@ -16,7 +16,7 @@ spec:
       - name: stock-connect
         image: debezium/connect:2.2
         ports:
-        - containerPort: 8082
+        - containerPort: 8083
         env:
         - name: GROUP_ID
           value: "1"
@@ -42,5 +42,5 @@ spec:
   selector:
     app: stock-connect
   ports:
-  - port: 8082
-    targetPort: 8082
+  - port: 8083
+    targetPort: 8083

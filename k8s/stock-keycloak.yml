@@ -39,15 +39,8 @@ spec:
           value: "postgres"
         - name: KC_PROXY
           value: "edge"
-        - name: KC_HTTP_RELATIVE_PATH
-          value: "/keycloak"          
-        - name: PROXY_ADDRESS_FORWARDING
-          value: "true"
-        - name: KC_HOSTNAME
-          valueFrom:
-            configMapKeyRef:
-              name: base-url-config
-              key: BASE_URL
+        - name: KC_PORT
+          value: "8080"
 
 ---
 apiVersion: v1
@@ -61,3 +54,4 @@ spec:
   - port: 8080
     protocol: TCP
     targetPort: 8080
+  type: LoadBalancer

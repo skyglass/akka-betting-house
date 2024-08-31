@@ -15,20 +15,6 @@ spec:
     - host: skycomposer.net
       http:
         paths:
-          - path: /keycloak/?(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: stock-keycloak
-                port:
-                  number: 8080
-          - path: /kafka/?(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: kafka-ui
-                port:
-                  number: 8081
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:
