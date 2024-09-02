@@ -68,7 +68,7 @@ spring:
                 name: customerCircuitBreaker
                 fallbackUri: forward:/stock-fallback
         - id: inventory
-          uri: ${INVENTORY_SERVICE_URL:http://localhost:9005}
+          uri: ${INVENTORY_SERVICE_URL:http://localhost:9002}
           predicates:
             - Path=/inventory/**
           filters:
@@ -78,7 +78,7 @@ spring:
                 name: inventoryCircuitBreaker
                 fallbackUri: forward:/stock-fallback                
         - id: order
-          uri: ${ORDER_SERVICE_URL:http://localhost:9002}
+          uri: ${ORDER_SERVICE_URL:http://localhost:9003}
           predicates:
             - Path=/order/**
           filters:

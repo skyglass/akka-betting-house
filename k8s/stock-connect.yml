@@ -28,10 +28,6 @@ spec:
           value: "connect_statuses"          
         - name: BOOTSTRAP_SERVERS
           value: "my-cluster-kafka-bootstrap:9092"
-        - name: JMXPORT
-          value: "9012"
-        - name: JMXHOST
-          value: "stock-connect"
 
 ---
 apiVersion: v1
@@ -43,4 +39,6 @@ spec:
     app: stock-connect
   ports:
   - port: 8083
+    protocol: TCP
     targetPort: 8083
+  type: LoadBalancer    

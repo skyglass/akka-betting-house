@@ -14,8 +14,8 @@ set -u # or set -o nounset
 
 kubectl delete configmap base-url-config
 kubectl create configmap base-url-config --from-literal=BASE_URL=$BASE_URL
-kubectl create -f 'https://strimzi.io/install/latest?namespace=default'
-kubectl apply -f 'https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/examples/kafka/kafka-persistent-single.yaml'
+
+kubectl apply -f 'https://strimzi.io/install/latest?namespace=default'
 
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
