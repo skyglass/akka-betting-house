@@ -40,8 +40,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${spring.keycloak.server-external-url}/realms/stock-realm
-          jwk-set-uri: ${spring.keycloak.server-url}/realms/stock-realm/protocol/openid-connect/certs
+          issuer-uri: ${spring.keycloak.server-external-url}/realms/betting-realm
+          jwk-set-uri: ${spring.keycloak.server-url}/realms/betting-realm/protocol/openid-connect/certs
 
   cloud:
     function:
@@ -69,7 +69,7 @@ spring:
 
 app:
   postgres:
-    host: stock-postgres
+    host: betting-postgres
     port: 5432
     database: customerdb
     user: customerdbuser
@@ -83,17 +83,17 @@ logging:
     level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"
     console: "%d{yyyy-MM-dd HH:mm:ss} ${LOG_LEVEL_PATTERN:-%5p} %m%n"
   level:
-    net.greeta.stock: DEBUG
+    net.skycomposer.betting: DEBUG
     org.springframework.cloud.kubernetes: TRACE
     org.springframework.security: DEBUG
 
 openapi:
   oauthflow:
     authServerUrl: ${spring.keycloak.server-external-url}
-    realm: stock-realm
+    realm: betting-realm
 
 jwt:
   auth:
     converter:
-      resource-id: stock-app
+      resource-id: betting-app
       principal-attribute: preferred_username

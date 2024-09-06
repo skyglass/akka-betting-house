@@ -59,7 +59,7 @@ spring:
 
 security:
   oauth2:
-    client-id: stock-app
+    client-id: betting-app
     grant-type: password
     username: admin
     password: admin

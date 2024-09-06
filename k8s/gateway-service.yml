@@ -36,12 +36,16 @@ spec:
           value: "http://inventory:9002"
         - name: ORDER_SERVICE_URL
           value: "http://order:9003"
+        - name: MARKET_SERVICE_URL
+          value: "http://market:9004"
+        - name: BETTING_SERVICE_URL
+          value: "http://betting:9005"
         - name: SPRING_REDIS_HOST
           value: "gateway-redis"
         - name: SPRING_REDIS_USERNAME
           value: "default"          
         - name: SPRING_KEYCLOAK_SERVER_URL
-          value: "http://stock-keycloak:8080"
+          value: "http://betting-keycloak:8080"
         - name: SPRING_KEYCLOAK_SERVER_EXTERNAL_URL
           value: "http://localhost:8080"
 

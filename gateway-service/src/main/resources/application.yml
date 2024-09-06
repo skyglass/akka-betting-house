@@ -66,7 +66,7 @@ spring:
             - name: CircuitBreaker
               args:
                 name: customerCircuitBreaker
-                fallbackUri: forward:/stock-fallback
+                fallbackUri: forward:/betting-fallback
         - id: inventory
           uri: ${INVENTORY_SERVICE_URL:http://localhost:9002}
           predicates:
@@ -76,7 +76,7 @@ spring:
             - name: CircuitBreaker
               args:
                 name: inventoryCircuitBreaker
-                fallbackUri: forward:/stock-fallback                
+                fallbackUri: forward:/betting-fallback
         - id: order
           uri: ${ORDER_SERVICE_URL:http://localhost:9003}
           predicates:
@@ -86,7 +86,27 @@ spring:
             - name: CircuitBreaker
               args:
                 name: orderCircuitBreaker
-                fallbackUri: forward:/stock-fallback
+                fallbackUri: forward:/betting-fallback
+        - id: market
+          uri: ${MARKET_SERVICE_URL:http://localhost:9004}
+          predicates:
+            - Path=/market/**
+          filters:
+            - RewritePath=/market/(?<path>.*), /$\{path}
+            - name: CircuitBreaker
+              args:
+                name: marketCircuitBreaker
+                fallbackUri: forward:/betting-fallback
+        - id: betting
+          uri: ${BETTING_SERVICE_URL:http://localhost:9005}
+          predicates:
+            - Path=/betting/**
+          filters:
+            - RewritePath=/betting/(?<path>.*), /$\{path}
+            - name: CircuitBreaker
+              args:
+                name: bettingCircuitBreaker
+                fallbackUri: forward:/betting-fallback
 
   data:
     redis:
@@ -108,18 +128,18 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${spring.keycloak.server-external-url}/realms/stock-realm
-          jwk-set-uri: ${spring.keycloak.server-url}/realms/stock-realm/protocol/openid-connect/certs
+          issuer-uri: ${spring.keycloak.server-external-url}/realms/betting-realm
+          jwk-set-uri: ${spring.keycloak.server-url}/realms/betting-realm/protocol/openid-connect/certs
 
 jwt:
   auth:
     converter:
-      resource-id: stock-app
+      resource-id: betting-app
       principal-attribute: preferred_username
 
-stock-app:
+betting-app:
   base-url: http://localhost:9000
-  redirect-url: ${stock-app.base-url}/*
+  redirect-url: ${betting-app.base-url}/*
 
 resilience4j:
   circuitbreaker:
@@ -185,6 +205,8 @@ springdoc:
       - url: /customer/v3/api-docs
         name: Customer Service
       - url: /inventory/v3/api-docs
-        name: Inventory Service        
-      - url: /order/v3/api-docs
-        name: Order Service
+        name: Inventory Service
+      - url: /market/v3/api-docs
+        name: Market Service
+      - url: /betting/v3/api-docs
+        name: Betting Service

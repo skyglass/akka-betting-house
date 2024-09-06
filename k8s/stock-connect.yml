@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stock-connect
+  name: betting-connect
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stock-connect
+      app: betting-connect
   template:
     metadata:
       labels:
-        app: stock-connect
+        app: betting-connect
     spec:        
       containers:
-      - name: stock-connect
+      - name: betting-connect
         image: debezium/connect:2.2
         ports:
         - containerPort: 8083
@@ -33,10 +33,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: stock-connect
+  name: betting-connect
 spec:
   selector:
-    app: stock-connect
+    app: betting-connect
   ports:
   - port: 8083
     protocol: TCP

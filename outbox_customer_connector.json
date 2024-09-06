@@ -2,7 +2,7 @@
   "name": "customer_outbox_connector",
   "config": {
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-    "database.hostname": "stock-postgres",
+    "database.hostname": "betting-postgres",
     "database.port": "5432",
     "database.user": "postgres",
     "database.password": "dbpass",

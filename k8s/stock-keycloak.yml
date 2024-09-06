@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stock-keycloak
+  name: betting-keycloak
   labels:
-    app: stock-keycloak
+    app: betting-keycloak
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stock-keycloak
+      app: betting-keycloak
   template:
     metadata:
       labels:
-        app: stock-keycloak
+        app: betting-keycloak
     spec:
       containers:
-      - name: stock-keycloak
+      - name: betting-keycloak
         image: quay.io/keycloak/keycloak:22.0.1
         args: ["start-dev"]
         ports:
@@ -46,10 +46,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: stock-keycloak
+  name: betting-keycloak
 spec:
   selector:
-    app: stock-keycloak
+    app: betting-keycloak
   ports:
   - port: 8080
     protocol: TCP

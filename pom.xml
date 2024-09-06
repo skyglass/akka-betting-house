@@ -9,8 +9,8 @@
         <relativePath />
     </parent>
 
-    <groupId>net.greeta.stock</groupId>
-    <artifactId>stock-parent</artifactId>
+    <groupId>net.skycomposer.betting</groupId>
+    <artifactId>betting-parent</artifactId>
     <version>1.1</version>
     <packaging>pom</packaging>
 
@@ -30,6 +30,8 @@
         <module>customer-service</module>
         <module>inventory-service</module>
         <module>order-service</module>
+        <module>market-service</module>
+        <module>betting-service</module>
         <module>gateway-service</module>
         <module>e2e-service</module>
     </modules>
@@ -38,7 +40,7 @@
         <dependencies>
 
             <dependency>
-                <groupId>net.greeta.stock</groupId>
+                <groupId>net.skycomposer.betting</groupId>
                 <artifactId>common-domain</artifactId>
                 <version>${project.version}</version>
             </dependency>

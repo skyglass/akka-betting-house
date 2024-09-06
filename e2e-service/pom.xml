@@ -4,8 +4,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>net.greeta.stock</groupId>
-		<artifactId>stock-parent</artifactId>
+		<groupId>net.skycomposer.betting</groupId>
+		<artifactId>betting-parent</artifactId>
 		<version>1.1</version>
 	</parent>
 	<artifactId>e2e-service</artifactId>
@@ -17,7 +17,7 @@
 	</properties>
 	<dependencies>
 		<dependency>
-			<groupId>net.greeta.stock</groupId>
+			<groupId>net.skycomposer.betting</groupId>
 			<artifactId>common-domain</artifactId>
 			<version>${project.version}</version>
 		</dependency>

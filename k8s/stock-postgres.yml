@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stock-postgres
+  name: betting-postgres
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stock-postgres
+      app: betting-postgres
   template:
     metadata:
       labels:
-        app: stock-postgres
+        app: betting-postgres
     spec:
       containers:
         - env:
@@ -18,8 +18,8 @@ spec:
               value: postgres
             - name: POSTGRES_PASSWORD
               value: dbpass
-          image: $CONTAINER_REGISTRY/stock-postgres:$VERSION
-          name: stock-postgres
+          image: $CONTAINER_REGISTRY/betting-postgres:$VERSION
+          name: betting-postgres
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
@@ -29,10 +29,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: stock-postgres
+  name: betting-postgres
 spec:
   selector:
-    app: stock-postgres
+    app: betting-postgres
   ports:
     - name: "5432"
       port: 5432
