@@ -128,12 +128,8 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
       }
   }
 
-  override def update(
-      in: akka.stream.scaladsl.Source[
-        example.market.grpc.MarketData,
-        akka.NotUsed]): akka.stream.scaladsl.Source[
-    example.market.grpc.Response,
-    akka.NotUsed] = {
+  override def update(in: example.market.grpc.MarketData)
+    : scala.concurrent.Future[example.market.grpc.Response] = {
 
     def auxUpdate(marketData: MarketData)(
         replyTo: ActorRef[Market.Response]): Market.Update = {

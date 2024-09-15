@@ -85,16 +85,27 @@
       <version>3.7.3</version>
     </dependency>
 
+    <dependency>
+      <groupId>net.skycomposer.betting</groupId>
+      <artifactId>betting-grpc-lib</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
       <dependency>
           <groupId>net.devh</groupId>
-          <artifactId>grpc-spring-boot-starter</artifactId>
-          <version>3.1.0.RELEASE</version>
+          <artifactId>grpc-client-spring-boot-starter</artifactId>
+          <version>${grpc-springboot.version}</version>
       </dependency>
 
   </dependencies>
 
 	<build>
+
+
 		<plugins>
+
+
+
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

@@ -105,3 +105,11 @@ jwt:
     converter:
       resource-id: betting-app
       principal-attribute: preferred_username
+
+grpc:
+  client:
+    betting-grpc-server:
+      address: ${BETTING_GRPC_SERVER_URL:localhost:9090}
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext

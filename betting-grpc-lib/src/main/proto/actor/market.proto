@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option java_package = "example.market.grpc";
+option java_package = "net.skycomposer.betting.market.grpc";
 option java_outer_classname = "MarketProto";
 
 message FixtureData {
@@ -45,7 +45,7 @@ service MarketService {
 
 	rpc Open(MarketData) returns (Response) {}
 
-	rpc Update(stream MarketData) returns (stream Response) {}
+	rpc Update(MarketData) returns (Response) {}
 
 	rpc CloseMarket(MarketId) returns (Response) {} 
 	//Adding the 'Market' suffix is necessary to avoid conflict with an already existing

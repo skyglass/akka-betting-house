@@ -45,7 +45,7 @@ service MarketService {
 
 	rpc Open(MarketData) returns (Response) {}
 
-	rpc Update(stream MarketData) returns (stream Response) {}
+	rpc Update(MarketData) returns (Response) {}
 
 	rpc CloseMarket(MarketId) returns (Response) {} 
 	//Adding the 'Market' suffix is necessary to avoid conflict with an already existing

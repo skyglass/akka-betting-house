@@ -14,7 +14,7 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class OrderController {
+public class BettingController {
 
   private final OrderUseCasePort orderUseCase;
 

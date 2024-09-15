@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option java_package = "betting.house.projection.proto";
+option java_package = "net.skycomposer.betting.projection.proto";
 option java_outer_classname = "BetProjectionProto";
 
 
@@ -10,7 +10,7 @@ message MarketIdsBet {
 message SumStakes {
 	repeated SumStake sumstakes = 1;
 }
-message SumStake {
+message SumStake{
 	double total = 1;
 	int32 result = 2;
 }
