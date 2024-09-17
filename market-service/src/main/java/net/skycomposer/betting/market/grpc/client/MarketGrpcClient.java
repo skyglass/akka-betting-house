@@ -73,15 +73,19 @@ public class MarketGrpcClient {
                 .setWinAway(marketData.getOdds().getWinAway())
                 .setWinHome(marketData.getOdds().getWinHome())
                 .build();
-        MarketProto.MarketData request = MarketProto.MarketData.newBuilder()
+        MarketProto.MarketData.Builder requestBuilder = MarketProto.MarketData.newBuilder()
                 .setMarketId(marketData.getMarketId())
                 .setFixture(fixtureRequest)
                 .setOpensAt(marketData.getOpensAt())
-                .setOdds(oddsRequest)
-                .setResult(MarketProto.MarketData.Result.valueOf(marketData.getResult().toString()))
-                .build();
+                .setOdds(oddsRequest);
 
-        return request;
+        if (marketData.getResult() != null) {
+            requestBuilder.setResult(
+                    marketData.getResult() == null ? null :
+                            MarketProto.MarketData.Result.valueOf(marketData.getResult().toString()));
+        }
+
+        return requestBuilder.build();
     }
 
     private MarketData createMarketData(MarketProto.MarketData grpcResponse) {
@@ -101,7 +105,8 @@ public class MarketGrpcClient {
                 .fixture(fixtureData)
                 .opensAt(grpcResponse.getOpensAt())
                 .odds(oddsData)
-                .result(MarketData.Result.valueOf(grpcResponse.getResult().toString()))
+                .result(grpcResponse.getResult() == null ? null :
+                        MarketData.Result.valueOf(grpcResponse.getResult().toString()))
                 .build();
 
         return marketData;

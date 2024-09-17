@@ -73,6 +73,9 @@ spec:
   selector:
     app: betting-house
   ports:
+  - name: management
+    port: 8558
+    targetPort: 8558
   - name: betting
     port: 9000
     targetPort: 9000
