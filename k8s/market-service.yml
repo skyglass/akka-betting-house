@@ -34,6 +34,8 @@ spec:
           value: "http://betting-keycloak:8080"
         - name: SPRING_KEYCLOAK_SERVER_EXTERNAL_URL
           value: "http://localhost:8080"
+        - name: MARKET_GRPC_SERVICE_URL
+          value: "http://betting-house:9002"          
         lifecycle:
           preStop:
             exec:

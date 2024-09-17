@@ -1,5 +1,6 @@
 package net.skycomposer.betting.market.grpc.client;
 
+import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import net.skycomposer.betting.common.domain.dto.market.*;
 import net.skycomposer.betting.market.grpc.MarketProto;
@@ -9,8 +10,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class MarketGrpcClient {
 
-    @GrpcClient("betting-grpc-server")
-    MarketServiceGrpc.MarketServiceBlockingStub stub;
+    @GrpcClient("market-grpc-server")
+    private MarketServiceGrpc.MarketServiceBlockingStub stub;
 
     public MarketData getState(String marketId) {
         MarketProto.MarketId marketIdRequest = MarketProto.MarketId.newBuilder()

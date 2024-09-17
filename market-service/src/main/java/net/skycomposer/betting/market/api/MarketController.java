@@ -1,5 +1,6 @@
 package net.skycomposer.betting.market.api;
 
+import net.skycomposer.betting.common.domain.dto.market.CancelMarketRequest;
 import net.skycomposer.betting.common.domain.dto.market.CloseMarketRequest;
 import net.skycomposer.betting.common.domain.dto.market.MarketData;
 import net.skycomposer.betting.common.domain.dto.market.MarketResponse;
@@ -39,5 +40,11 @@ public class MarketController {
   public MarketResponse close(@RequestBody @Valid CloseMarketRequest request) {
     log.info("Close market {}", request);
     return marketGrpcClient.close(request);
+  }
+
+  @PostMapping("/cancel")
+  public MarketResponse cancel(@RequestBody @Valid CancelMarketRequest request) {
+    log.info("Cancel market {}", request);
+    return marketGrpcClient.cancel(request);
   }
 }

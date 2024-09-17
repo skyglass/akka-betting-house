@@ -129,7 +129,7 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
   }
 
   override def update(in: example.market.grpc.MarketData)
-    : scala.concurrent.Future[example.market.grpc.Response] = {
+      : scala.concurrent.Future[example.market.grpc.Response] = {
 
     def auxUpdate(marketData: MarketData)(
         replyTo: ActorRef[Market.Response]): Market.Update = {
@@ -150,23 +150,20 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
 
     }
 
-    in.mapAsync(10) { marketData =>
-      val marketRef =
-        sharding.entityRefFor(Market.typeKey, marketData.marketId)
+    val market = sharding.entityRefFor(Market.typeKey, in.marketId)
 
-      marketRef
-        .ask(auxUpdate(marketData))
-        .mapTo[Market.Response]
-        .map { response =>
-          response match {
-            case Market.Accepted =>
-              example.market.grpc.Response("Updated")
-            case Market.RequestUnaccepted(reason) =>
-              example.market.grpc
-                .Response(s"market NOT updated because [$reason]")
-          }
+    market
+      .ask(auxUpdate(in))
+      .mapTo[Market.Response]
+      .map { response =>
+        response match {
+          case Market.Accepted =>
+            example.market.grpc.Response("Updated")
+          case Market.RequestUnaccepted(reason) =>
+            example.market.grpc
+              .Response(s"market NOT updated because [$reason]")
         }
-    }
+      }
 
   }
 

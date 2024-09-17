@@ -1,32 +1,46 @@
 package net.skycomposer.betting.betting.api;
 
-import net.skycomposer.betting.betting.domain.port.OrderUseCasePort;
-import net.skycomposer.betting.common.domain.dto.order.OrderRequest;
-import net.skycomposer.betting.common.domain.dto.order.Order;
+import net.skycomposer.betting.betting.grpc.client.BettingGrpcClient;
+import net.skycomposer.betting.common.domain.dto.betting.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class BettingController {
 
-  private final OrderUseCasePort orderUseCase;
+  private final BettingGrpcClient bettingGrpcClient;
 
-  @PostMapping
-  @ResponseStatus(HttpStatus.CREATED)
-  public UUID placeOrder(@RequestBody @Valid OrderRequest orderRequest) {
-    log.info("Received new order request {}", orderRequest);
-    return orderUseCase.placeOrder(orderRequest);
+  @GetMapping("/get-state/{betId}")
+  public BetData getState(@PathVariable String betId) {
+    return bettingGrpcClient.getState(betId);
   }
 
-  @GetMapping("{orderId}")
-  public Order getOrder(@PathVariable UUID orderId) {
-    return orderUseCase.getOrder(orderId);
+  @GetMapping("/get-bets-by-market/{marketId}")
+  public SumStakesData getBetsByMarket(@PathVariable String marketId) {
+    return bettingGrpcClient.getBetByMarket(marketId);
+  }
+
+  @PostMapping("/open")
+  @ResponseStatus(HttpStatus.CREATED)
+  public BetResponse open(@RequestBody @Valid BetData betData) {
+    log.info("Open new bet {}", betData);
+    return bettingGrpcClient.open(betData);
+  }
+
+  @PostMapping("/settle")
+  public BetResponse settle(@RequestBody @Valid SettleBetRequest request) {
+    log.info("Settle bet {}", request);
+    return bettingGrpcClient.settle(request);
+  }
+
+  @PostMapping("/cancel")
+  public BetResponse close(@RequestBody @Valid CancelBetRequest request) {
+    log.info("Cancel bet {}", request);
+    return bettingGrpcClient.cancel(request);
   }
 }
