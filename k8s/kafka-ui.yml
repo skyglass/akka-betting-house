@@ -26,10 +26,6 @@ spec:
           value: "true"
         - name: KAFKA_CLUSTERS_0_ZOOKEEPER
           value: "my-cluster-zookeeper-client:2181"
-        - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME
-          value: "betting-connect"
-        - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS
-          value: "http://betting-connect:8083"
 
 ---
 apiVersion: v1

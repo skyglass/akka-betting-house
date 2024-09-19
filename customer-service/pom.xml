@@ -16,6 +16,10 @@
       <groupId>net.skycomposer.betting</groupId>
       <artifactId>common-domain</artifactId>
     </dependency>
+      <dependency>
+          <groupId>org.springframework.cloud</groupId>
+          <artifactId>spring-cloud-starter-openfeign</artifactId>
+      </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
@@ -28,14 +32,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-stream</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-stream-binder-kafka</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-configuration-processor</artifactId>
@@ -51,33 +48,6 @@
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>${springdoc.version}</version>
-    </dependency>
-
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.flywaydb</groupId>
-        <artifactId>flyway-database-postgresql</artifactId>
-      <scope>runtime</scope>        
-    </dependency>
-
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.hypersistence</groupId>
-      <artifactId>hypersistence-utils-hibernate-63</artifactId>
-      <version>3.7.3</version>
     </dependency>
   </dependencies>
 

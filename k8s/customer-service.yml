@@ -9,6 +9,11 @@ spec:
   selector:
     matchLabels:
       app: customer
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -34,6 +39,9 @@ spec:
           value: "http://betting-keycloak:8080"
         - name: SPRING_KEYCLOAK_SERVER_EXTERNAL_URL
           value: "http://localhost:8080"
+        - name: HTTP_WALLET_SERVER_URL
+          value: "http://betting-house:9001/wallet"
+          
         lifecycle:
           preStop:
             exec:

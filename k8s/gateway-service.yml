@@ -32,10 +32,6 @@ spec:
           value: "8000"
         - name: CUSTOMER_SERVICE_URL
           value: "http://customer:9001"
-        - name: INVENTORY_SERVICE_URL
-          value: "http://inventory:9002"
-        - name: ORDER_SERVICE_URL
-          value: "http://order:9003"
         - name: MARKET_SERVICE_URL
           value: "http://market:9004"
         - name: BETTING_SERVICE_URL

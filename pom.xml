@@ -32,8 +32,6 @@
         <module>common-domain</module>
         <module>betting-grpc-lib</module>
         <module>customer-service</module>
-        <module>inventory-service</module>
-        <module>order-service</module>
         <module>market-service</module>
         <module>betting-service</module>
         <module>gateway-service</module>

@@ -1,3 +1,30 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: betting-house-postgres-pv
+spec:
+  capacity:
+    storage: 10Gi  # Adjust storage size as needed
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual  # Use manual storage class for explicit PV binding
+  hostPath:
+    path: "/mnt/data/postgresql"  # This path is on the host node
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: betting-house-postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: manual  # Match the manual storage class with the PV
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,8 +50,15 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data  # Default data path for PostgreSQL
           resources: {}
       restartPolicy: Always
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: betting-house-postgres-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -37,3 +71,4 @@ spec:
     - name: "5432"
       port: 5432
       targetPort: 5432
+  type: LoadBalancer

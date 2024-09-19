@@ -71,7 +71,7 @@ metadata:
     app: betting-house
 spec:
   selector:
-    app: betting-house
+    app: to-find-nodes-and-form-the-cluster
   ports:
   - name: management
     port: 8558
@@ -81,7 +81,10 @@ spec:
     targetPort: 9000
   - name: betting-projection
     port: 9003
-    targetPort: 9003
+    targetPort: 9003  
   - name: market
     port: 9002
-    targetPort: 9002
+    targetPort: 9002      
+  - name: wallet
+    port: 9001
+    targetPort: 9001

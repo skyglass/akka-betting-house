@@ -67,26 +67,6 @@ spring:
               args:
                 name: customerCircuitBreaker
                 fallbackUri: forward:/betting-fallback
-        - id: inventory
-          uri: ${INVENTORY_SERVICE_URL:http://localhost:9002}
-          predicates:
-            - Path=/inventory/**
-          filters:
-            - RewritePath=/inventory/(?<path>.*), /$\{path}
-            - name: CircuitBreaker
-              args:
-                name: inventoryCircuitBreaker
-                fallbackUri: forward:/betting-fallback
-        - id: order
-          uri: ${ORDER_SERVICE_URL:http://localhost:9003}
-          predicates:
-            - Path=/order/**
-          filters:
-            - RewritePath=/order/(?<path>.*), /$\{path}
-            - name: CircuitBreaker
-              args:
-                name: orderCircuitBreaker
-                fallbackUri: forward:/betting-fallback
         - id: market
           uri: ${MARKET_SERVICE_URL:http://localhost:9004}
           predicates:
@@ -204,8 +184,6 @@ springdoc:
       #   primaryName: API Gateway Service
       - url: /customer/v3/api-docs
         name: Customer Service
-      - url: /inventory/v3/api-docs
-        name: Inventory Service
       - url: /market/v3/api-docs
         name: Market Service
       - url: /betting/v3/api-docs

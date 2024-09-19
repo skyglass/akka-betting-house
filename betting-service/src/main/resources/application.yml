@@ -55,14 +55,18 @@ jwt:
       principal-attribute: preferred_username
 
 grpc:
+  betting:
+    server-url: localhost:9000
+  betting-projection:
+    server-url: localhost:9003
   client:
     betting-grpc-server:
-      address: ${BETTING_GRPC_SERVER_URL:localhost:9090}
+      address: ${grpc.betting.server-url}
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext
     betting-grpc-projection-server:
-      address: ${BETTING_GRPC_PROJECTION_SERVER_URL:localhost:9093}
+      address: ${grpc.betting-projection.server-url}
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext

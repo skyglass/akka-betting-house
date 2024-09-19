@@ -34,12 +34,6 @@ public class WebSecurityConfig {
                         .pathMatchers(HttpMethod.GET,"/customer/v3/api-docs/**").permitAll()
                         .pathMatchers("/customer", "/customer/**").permitAll()
 
-                        .pathMatchers(HttpMethod.GET,"/order/v3/api-docs/**").permitAll()
-                        .pathMatchers("/order", "/order/**").permitAll()
-
-                        .pathMatchers(HttpMethod.GET,"/inventory/v3/api-docs/**").permitAll()
-                        .pathMatchers("/inventory", "/inventory/**").permitAll()
-
                         .pathMatchers(HttpMethod.GET,"/market/v3/api-docs/**").permitAll()
                         .pathMatchers("/market", "/market/**").permitAll()
 
