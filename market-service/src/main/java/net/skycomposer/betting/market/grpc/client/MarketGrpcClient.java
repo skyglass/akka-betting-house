@@ -1,6 +1,5 @@
 package net.skycomposer.betting.market.grpc.client;
 
-import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import net.skycomposer.betting.common.domain.dto.market.*;
 import net.skycomposer.betting.market.grpc.MarketProto;
@@ -63,27 +62,32 @@ public class MarketGrpcClient {
     }
 
     private MarketProto.MarketData createGrpcRequest(MarketData marketData) {
-        MarketProto.FixtureData fixtureRequest = MarketProto.FixtureData.newBuilder()
-                .setId(marketData.getFixture().getId())
-                .setAwayTeam(marketData.getFixture().getAwayTeam())
-                .setHomeTeam(marketData.getFixture().getHomeTeam())
-                .build();
-        MarketProto.OddsData oddsRequest = MarketProto.OddsData.newBuilder()
-                .setTie(marketData.getOdds().getTie())
-                .setWinAway(marketData.getOdds().getWinAway())
-                .setWinHome(marketData.getOdds().getWinHome())
-                .build();
-        MarketProto.MarketData.Builder requestBuilder = MarketProto.MarketData.newBuilder()
-                .setMarketId(marketData.getMarketId())
-                .setFixture(fixtureRequest)
-                .setOpensAt(marketData.getOpensAt())
-                .setOdds(oddsRequest);
+        MarketProto.MarketData.Builder requestBuilder = MarketProto.MarketData.newBuilder();
+         requestBuilder.setMarketId(marketData.getMarketId());
+        if (marketData.getFixture()!= null) {
+            MarketProto.FixtureData fixtureRequest = MarketProto.FixtureData.newBuilder()
+                    .setId(marketData.getFixture().getId())
+                    .setAwayTeam(marketData.getFixture().getAwayTeam())
+                    .setHomeTeam(marketData.getFixture().getHomeTeam())
+                    .build();
+            requestBuilder.setFixture(fixtureRequest);
+
+        }
+
+        if (marketData.getOdds() != null) {
+            MarketProto.OddsData oddsRequest = MarketProto.OddsData.newBuilder()
+                    .setTie(marketData.getOdds().getTie())
+                    .setWinAway(marketData.getOdds().getWinAway())
+                    .setWinHome(marketData.getOdds().getWinHome())
+                    .build();
+            requestBuilder.setOdds(oddsRequest);
+        }
 
         if (marketData.getResult() != null) {
-            requestBuilder.setResult(
-                    marketData.getResult() == null ? null :
-                            MarketProto.MarketData.Result.valueOf(marketData.getResult().toString()));
+            requestBuilder.setResult(MarketProto.MarketData.Result.valueOf(marketData.getResult().toString()));
         }
+
+        requestBuilder.setOpensAt(marketData.getOpensAt());
 
         return requestBuilder.build();
     }
@@ -103,10 +107,10 @@ public class MarketGrpcClient {
         MarketData marketData = MarketData.builder()
                 .marketId(grpcResponse.getMarketId())
                 .fixture(fixtureData)
-                .opensAt(grpcResponse.getOpensAt())
                 .odds(oddsData)
                 .result(grpcResponse.getResult() == null ? null :
                         MarketData.Result.valueOf(grpcResponse.getResult().toString()))
+                .opensAt(grpcResponse.getOpensAt())
                 .build();
 
         return marketData;

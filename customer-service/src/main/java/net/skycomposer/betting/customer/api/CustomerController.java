@@ -22,12 +22,12 @@ public class CustomerController {
 
   @PostMapping("/add-funds/{walletId}/{funds}")
   public WalletResponse addWallet(@PathVariable String walletId, @PathVariable int funds) {
-    return walletClient.add(walletId, funds);
+    return new WalletResponse(walletClient.add(walletId, funds));
   }
 
   @PostMapping("/remove-funds/{walletId}/{funds}")
   public WalletResponse removeWallet(@PathVariable String walletId, @PathVariable int funds) {
-    return walletClient.remove(walletId, funds);
+    return new WalletResponse(walletClient.remove(walletId, funds));
   }
 
 }

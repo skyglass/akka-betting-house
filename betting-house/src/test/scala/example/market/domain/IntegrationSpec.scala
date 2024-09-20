@@ -123,14 +123,14 @@ class IntegrationSpec
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
 
-      //TODO for the reader. Make sure the money is back to the wallet is bet fails.
-      // wallet ! Wallet.CheckFunds(walletProbe.ref)
-      // walletProbe.expectMessage(Wallet.CurrentBalance(100))
+      //TODO for the reader. Make sure the money is back to the wallet if bet fails.
+      //wallet ! Wallet.CheckFunds(walletProbe.ref)
+      //walletProbe.expectMessage(Wallet.CurrentBalance(100))
     }
   }
 
   "a bet" should {
-    "pass if the odds from the market are equal that the bet ones" in {
+    "pass if the odds from the market are equal to the bet ones" in {
 
       val walletId = "walletId2"
       val marketId = "marketId2"

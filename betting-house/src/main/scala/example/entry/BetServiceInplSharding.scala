@@ -18,7 +18,7 @@ import scala.util.{ Failure, Success, Try }
 class BetServiceImplSharding(implicit sharding: ClusterSharding)
     extends BetService {
 
-  implicit val timeout: Timeout = 3.seconds
+  implicit val timeout: Timeout = 6.seconds
   implicit val executionContext: ExecutionContext =
     ExecutionContext.global
 
