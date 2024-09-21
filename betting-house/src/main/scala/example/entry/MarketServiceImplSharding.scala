@@ -71,15 +71,21 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
         val (
           marketId,
           Market.Fixture(id, homeTeam, awayTeam),
-          Market.Odds(winHome, winAway, draw)) = (
+          Market.Odds(winHome, winAway, draw),
+          result,
+          opensAt) = (
           state.status.marketId,
           state.status.fixture,
-          state.status.odds)
+          state.status.odds,
+          state.status.result,
+          state.status.opensAt)
 
         MarketData(
           marketId,
           Some(FixtureData(id, homeTeam, awayTeam)),
-          Some(OddsData(winHome, winAway, draw)))
+          Some(OddsData(winHome, winAway, draw)),
+          MarketData.Result.fromValue(result),
+          opensAt)
     }
 
   }
@@ -107,8 +113,7 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
             "Odds are empty. Not allowed")
       }
 
-      val opensAt = OffsetDateTime
-        .ofInstant(Instant.ofEpochMilli(in.opensAt), ZoneId.of("UTC"))
+      val opensAt = in.opensAt
 
       Market.Open(fixture, odds, opensAt, replyTo)
 
@@ -137,12 +142,7 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
       val odds = marketData.odds.map(m =>
         Market.Odds(m.winHome, m.winAway, m.tie))
 
-      val opensAt =
-        Some(
-          OffsetDateTime
-            .ofInstant(
-              Instant.ofEpochMilli(marketData.opensAt),
-              ZoneId.of("UTC")))
+      val opensAt = Some(marketData.opensAt)
 
       val result = Some(marketData.result.value)
 

@@ -38,14 +38,14 @@ object Market {
   final case class Open(
       fixture: Fixture,
       odds: Odds,
-      opensAt: OffsetDateTime,
+      opensAt: Long,
       replyTo: ActorRef[Response])
       extends Command
 
   final case class Update(
       odds: Option[Odds],
-      opensAt: Option[OffsetDateTime],
-      result: Option[Int], //1 =  winHome, 2 = winAway, 0 = draw
+      opensAt: Option[Long],
+      result: Option[Int], //0 =  winHome, 1 = winAway, 2 = draw
       replyTo: ActorRef[Response])
       extends Command
 
@@ -68,11 +68,12 @@ object Market {
       marketId: String,
       fixture: Fixture,
       odds: Odds,
-      result: Int)
+      result: Int,
+      opensAt: Long)
       extends CborSerializable
   object Status {
     def empty(marketId: String) =
-      Status(marketId, Fixture("", "", ""), Odds(-1, -1, -1), 0)
+      Status(marketId, Fixture("", "", ""), Odds(-1, -1, -1), 0, 0)
   }
   final case class UninitializedState(status: Status) extends State
   final case class OpenState(status: Status) extends State
@@ -116,12 +117,14 @@ object Market {
   final case class Opened(
       marketId: String,
       fixture: Fixture,
-      odds: Odds)
+      odds: Odds,
+      opensAt: Long)
       extends Event
   final case class Updated(
       marketId: String,
       odds: Option[Odds],
-      result: Option[Int])
+      result: Option[Int],
+      opensAt: Option[Long])
       extends Event
   final case class Closed(
       marketId: String,
@@ -133,14 +136,15 @@ object Market {
 
   private def handleEvents(state: State, event: Event): State = {
     (state, event) match {
-      case (_, Opened(marketId, fixture, odds)) =>
-        OpenState(Status(marketId, fixture, odds, 0))
-      case (state: OpenState, Updated(_, odds, result)) =>
+      case (_, Opened(marketId, fixture, odds, opensAt)) =>
+        OpenState(Status(marketId, fixture, odds, 0, opensAt))
+      case (state: OpenState, Updated(_, odds, result, opensAt)) =>
         state.copy(status = Status(
           state.status.marketId,
           state.status.fixture,
           odds.getOrElse(state.status.odds),
-          result.getOrElse(state.status.result)))
+          result.getOrElse(state.status.result),
+          opensAt.getOrElse(state.status.opensAt)))
       case (state: OpenState, Closed(_, result, _)) =>
         ClosedState(state.status.copy(result = result))
       case (_, Cancelled(_, _)) =>
@@ -152,7 +156,7 @@ object Market {
       state: State,
       command: Open): ReplyEffect[Opened, State] = {
     val opened =
-      Opened(state.status.marketId, command.fixture, command.odds)
+      Opened(state.status.marketId, command.fixture, command.odds, command.opensAt)
     Effect
       .persist(opened)
       .thenReply(command.replyTo)(_ => Accepted)
@@ -162,7 +166,7 @@ object Market {
       state: State,
       command: Update): ReplyEffect[Updated, State] = {
     val updated =
-      Updated(state.status.marketId, command.odds, command.result)
+      Updated(state.status.marketId, command.odds, command.result, command.opensAt)
     Effect
       .persist(updated)
       .thenReply(command.replyTo)(_ => Accepted)

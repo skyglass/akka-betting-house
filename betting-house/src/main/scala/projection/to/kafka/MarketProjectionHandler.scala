@@ -50,7 +50,7 @@ class MarketProjectionHandler(
     val proto = event match {
       case Market.Closed(marketId, result, _) =>
         projection.proto.MarketClosed(marketId, result)
-      case Market.Opened(marketId, _, _) =>
+      case Market.Opened(marketId, _, _, _) =>
         projection.proto.MarketOpened(marketId)
       case Market.Cancelled(marketId, reason) =>
         projection.proto.MarketCancelled(marketId, reason)

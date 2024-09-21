@@ -94,7 +94,7 @@ class IntegrationSpec
       market ! Market.Open(
         Market.Fixture("fixtureId1", "RM", "MU"),
         Market.Odds(1.25, 1.75, 1.05),
-        OffsetDateTime.now,
+        OffsetDateTime.now.toInstant.toEpochMilli,
         marketProbe.ref)
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)
@@ -151,7 +151,7 @@ class IntegrationSpec
       market ! Market.Open(
         Market.Fixture("fixtureId2", "RM", "MU"),
         Market.Odds(1.25, 1.75, 1.05),
-        OffsetDateTime.now,
+        OffsetDateTime.now.toInstant.toEpochMilli,
         marketProbe.ref)
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)
@@ -197,7 +197,7 @@ class IntegrationSpec
       market ! Market.Open(
         Market.Fixture("fixtureId3", "RM", "MU"),
         Market.Odds(1.25, 1.75, 1.05),
-        OffsetDateTime.now,
+        OffsetDateTime.now.toInstant.toEpochMilli,
         marketProbe.ref)
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)

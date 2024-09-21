@@ -78,7 +78,7 @@ class SuggestionImplSpec
       market ! Market.Open(
         Market.Fixture("fixtureId1", "RM", "MU"),
         Market.Odds(1.25, 1.75, 1.05),
-        OffsetDateTime.now,
+        OffsetDateTime.now.toInstant.toEpochMilli,
         marketProbe.ref)
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)
@@ -138,13 +138,13 @@ class SuggestionImplSpec
       market ! Market.Open(
         Market.Fixture("fixtureId2", "RM", "MU"),
         Market.Odds(1.25, 1.75, 1.05),
-        OffsetDateTime.now,
+        OffsetDateTime.now.toInstant.toEpochMilli,
         marketProbe.ref)
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)
 
       market ! Market.Update(
-        null, Some(OffsetDateTime.now.plus(1000, ChronoUnit.SECONDS)), null,
+        null, Some(OffsetDateTime.now.plus(1000, ChronoUnit.SECONDS).toInstant.toEpochMilli), null,
         marketProbe.ref)
 
       val bet = sharding.entityRefFor(Bet.typeKey, betId)
@@ -188,7 +188,7 @@ class SuggestionImplSpec
       market ! Market.Open(
         Market.Fixture("fixtureId3", "RM", "MU"),
         Market.Odds(1.25, 1.75, 1.05),
-        OffsetDateTime.now,
+        OffsetDateTime.now.toInstant.toEpochMilli,
         marketProbe.ref)
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)
