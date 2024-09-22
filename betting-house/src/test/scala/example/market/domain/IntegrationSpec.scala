@@ -172,6 +172,9 @@ class IntegrationSpec
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
+
+      wallet ! Wallet.CheckFunds(walletProbe.ref)
+      walletProbe.expectMessage(Wallet.CurrentBalance(0))
     }
   }
 
@@ -220,6 +223,9 @@ class IntegrationSpec
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
+
+      wallet ! Wallet.CheckFunds(walletProbe.ref)
+      walletProbe.expectMessage(Wallet.CurrentBalance(0))
     }
   }
 

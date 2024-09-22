@@ -56,6 +56,10 @@ object Bet {
   private final case class RequestWalletFunds(
       response: Wallet.UpdatedResponse)
       extends Command
+
+  private final case class RequestWalletRefund(
+      response: Wallet.UpdatedResponse)
+      extends Command
   private final case class ValidationsTimedOut(seconds: Int)
       extends Command
   private final case class Fail(reason: String) extends Command
@@ -140,6 +144,8 @@ object Bet {
         validateMarket(state, command)
       case (state: OpenState, command: RequestWalletFunds) =>
         validateFunds(state, command)
+      case (state: OpenState, command: RequestWalletRefund) =>
+        validateFunds(state, command)
       case (state: OpenState, command: ValidationsTimedOut) =>
         checkValidations(state, command)
       case (state: OpenState, command: Settle) =>
@@ -158,6 +164,7 @@ object Bet {
   sealed trait Event extends CborSerializable
   final case class MarketConfirmed(state: OpenState) extends Event
   final case class FundsGranted(state: OpenState) extends Event
+  final case class RefundGranted(state: OpenState) extends Event
   final case class ValidationsPassed(state: OpenState) extends Event
   final case class Opened(
       betId: String,
@@ -246,6 +253,18 @@ object Bet {
     }
   }
 
+  private def validateRefund(
+       state: OpenState,
+       command: RequestWalletRefund): Effect[Event, State] = {
+    command.response match {
+      case Wallet.Accepted =>
+        Effect.persist(FundsGranted(state))
+      case Wallet.Rejected =>
+        Effect.persist(
+          Failed(state.status.betId, "funds refund failed"))
+    }
+  }
+
   //market changes very fast even if our system haven't register the
   //change we need to take this decision quickly. If the Market is not available
   // we fail fast.
@@ -285,6 +304,20 @@ object Bet {
       context.messageAdapter(rsp => RequestWalletFunds(rsp))
 
     walletRef ! Wallet.ReserveFunds(
+      command.stake,
+      walletResponseMapper)
+  }
+
+  private def requestWalletRefund(
+      command: Open,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Unit = {
+    val walletRef =
+      sharding.entityRefFor(Wallet.typeKey, command.walletId)
+    val walletResponseMapper: ActorRef[Wallet.UpdatedResponse] =
+      context.messageAdapter(rsp => RequestWalletRefund(rsp))
+
+    walletRef ! Wallet.AddFunds(
       command.stake,
       walletResponseMapper)
   }
