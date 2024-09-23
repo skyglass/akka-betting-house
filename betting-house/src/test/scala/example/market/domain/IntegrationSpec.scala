@@ -124,8 +124,8 @@ class IntegrationSpec
       }
 
       //TODO for the reader. Make sure the money is back to the wallet if bet fails.
-      //wallet ! Wallet.CheckFunds(walletProbe.ref)
-      //walletProbe.expectMessage(Wallet.CurrentBalance(100))
+      wallet ! Wallet.CheckFunds(walletProbe.ref)
+      walletProbe.expectMessage(Wallet.CurrentBalance(100))
     }
   }
 
