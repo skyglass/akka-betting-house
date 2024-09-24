@@ -118,12 +118,11 @@ class IntegrationSpec
         val expected = Bet.FailedState(
           Bet
             .Status("betId1", "walletId1", "marketId1", 1.26, 100, 0),
-          "market odds [Some(1.05)] not available")
+          "market odds [Some(1.25)] not available")
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
 
-      //TODO for the reader. Make sure the money is back to the wallet if bet fails.
       wallet ! Wallet.CheckFunds(walletProbe.ref)
       walletProbe.expectMessage(Wallet.CurrentBalance(100))
     }
