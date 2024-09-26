@@ -3,7 +3,7 @@ package net.skycomposer.betting.common;
 import lombok.SneakyThrows;
 import net.skycomposer.betting.client.KafkaClient;
 import net.skycomposer.betting.config.MockHelper;
-import net.skycomposer.betting.customer.CustomerTestDataService;
+import net.skycomposer.betting.bettinghouse.BettingHouseTestDataService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +22,7 @@ public abstract class E2eTest {
     private MockHelper mockHelper;
 
     @Autowired
-    private CustomerTestDataService customerTestDataService;
+    private BettingHouseTestDataService customerTestDataService;
 
     @Autowired
     private KafkaClient kafkaClient;
@@ -30,10 +30,8 @@ public abstract class E2eTest {
     @BeforeEach
     @SneakyThrows
     void cleanup() {
-        kafkaClient.clearMessages("CUSTOMER.events");
-        kafkaClient.clearMessages("PRODUCT.events");
-        kafkaClient.clearMessages("ORDER.events");
-        kafkaClient.clearMessages("ORDER.events.dlq");
+        kafkaClient.clearMessages("market-projection");
+        kafkaClient.clearMessages("bet-projection");
         mockHelper.mockCredentials(securityOauth2Username, securityOauth2Password);
         customerTestDataService.resetDatabase();
         //TimeUnit.MILLISECONDS.sleep(Duration.ofSeconds(1).toMillis());

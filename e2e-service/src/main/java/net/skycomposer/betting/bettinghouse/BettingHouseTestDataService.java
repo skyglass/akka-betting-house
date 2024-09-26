@@ -1,4 +1,4 @@
-package net.skycomposer.betting.customer;
+package net.skycomposer.betting.bettinghouse;
 
 import lombok.extern.slf4j.Slf4j;
 import net.skycomposer.betting.testdata.JdbcTestDataService;
@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class CustomerTestDataService extends JdbcTestDataService {
+public class BettingHouseTestDataService extends JdbcTestDataService {
 
     @Autowired
-    @Qualifier("customerJdbcTemplate")
+    @Qualifier("bettingHouseJdbcTemplate")
     private JdbcTemplate jdbcTemplate;
 
     @Override
@@ -22,9 +22,12 @@ public class CustomerTestDataService extends JdbcTestDataService {
 
     @Override
     public void resetDatabase() {
-        executeString("DELETE FROM message_log");
-        executeString("DELETE FROM out_box");
-        executeString("DELETE FROM customers");
+        executeString("DELETE FROM event_tag");
+        executeString("DELETE FROM event_journal");
+        executeString("DELETE FROM snapshot");
+        executeString("DELETE FROM akka_projection_management");
+        executeString("DELETE FROM akka_projection_offset_store");
+        executeString("DELETE FROM bet_wallet_market");
     }
 
 }

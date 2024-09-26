@@ -176,7 +176,7 @@ change the `pod-name` accordingly
 
 You can use the port forwarding to the DB to connect to it and check the expected events are stored in the DB.
   
-    k port-forward svc/betting-house-postgres-srv 5432:5432 -n akka-cluster
+    k port-forward svc/betting-house-postgres 5432:5432 -n akka-cluster
 
 
 #### To connect to the betting services

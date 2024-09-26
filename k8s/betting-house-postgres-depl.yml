@@ -63,7 +63,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: betting-house-postgres-srv
+  name: betting-house-postgres
 spec:
   selector:
     app: betting-house-postgres

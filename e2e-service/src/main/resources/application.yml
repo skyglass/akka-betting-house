@@ -10,20 +10,24 @@ spring:
             readTimeout: 20000
             connectTimeout: 30000
           customer:
-            url: http://localhost:9000/customer
+            url: http://localhost/customer
+          market:
+            url: http://localhost/market
+          betting:
+            url: http://localhost/betting
           oauth2:
             url: http://localhost:8080
           kafka:
-            url: http://localhost:8070/api/clusters/local
+            url: http://localhost:8081/api/clusters/local
 
   jpa:
     hibernate:
       ddl-auto: none
   datasource:
-    customer:
-      url: jdbc:postgresql://${app.customer.postgres.host}:${app.customer.postgres.port}/${app.customer.postgres.database}
-      username: ${app.customer.postgres.user}
-      password: ${app.customer.postgres.password}
+    betting-house:
+      url: jdbc:postgresql://${app.betting-house.postgres.host}:${app.betting-house.postgres.port}/${app.betting-house.postgres.database}
+      username: ${app.betting-house.postgres.user}
+      password: ${app.betting-house.postgres.password}
       driver-class-name: org.postgresql.Driver
       hikari:
         connection-timeout: 2000 #ms
@@ -37,10 +41,10 @@ security:
     password: admin
 
 app:
-  customer:
+  betting-house:
     postgres:
-      host: localhost
+      host: betting-house-postgres
       port: 5432
-      database: customerdb
-      user: customerdbuser
+      database: betting
+      user: postgres
       password: dbpass
