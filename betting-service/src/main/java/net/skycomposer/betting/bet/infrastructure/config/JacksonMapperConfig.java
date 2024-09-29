@@ -1,4 +1,4 @@
-package net.skycomposer.betting.betting.infrastructure.config;
+package net.skycomposer.betting.bet.infrastructure.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

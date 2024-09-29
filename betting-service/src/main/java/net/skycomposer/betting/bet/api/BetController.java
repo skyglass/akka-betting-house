@@ -1,6 +1,6 @@
-package net.skycomposer.betting.betting.api;
+package net.skycomposer.betting.bet.api;
 
-import net.skycomposer.betting.betting.grpc.client.BettingGrpcClient;
+import net.skycomposer.betting.bet.grpc.client.BettingGrpcClient;
 import net.skycomposer.betting.common.domain.dto.betting.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class BettingController {
+public class BetController {
 
   private final BettingGrpcClient bettingGrpcClient;
 

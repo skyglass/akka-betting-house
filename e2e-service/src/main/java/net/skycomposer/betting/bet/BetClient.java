@@ -1,17 +1,13 @@
-package net.skycomposer.betting.betting;
+package net.skycomposer.betting.bet;
 
 import jakarta.validation.Valid;
 import net.skycomposer.betting.common.domain.dto.betting.*;
-import net.skycomposer.betting.common.domain.dto.market.CancelMarketRequest;
-import net.skycomposer.betting.common.domain.dto.market.CloseMarketRequest;
-import net.skycomposer.betting.common.domain.dto.market.MarketData;
-import net.skycomposer.betting.common.domain.dto.market.MarketResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @FeignClient(name = "betting")
-public interface BettingClient {
+public interface BetClient {
 
     @GetMapping("/get-state/{betId}")
     BetData getState(@PathVariable String betId);

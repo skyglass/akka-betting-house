@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MarketResponse {
 
+    private String marketId;
+
     private String message;
 }
 

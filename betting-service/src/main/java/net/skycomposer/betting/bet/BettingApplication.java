@@ -1,4 +1,4 @@
-package net.skycomposer.betting.betting;
+package net.skycomposer.betting.bet;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BetResponse {
 
+    private String betId;
     private String message;
 }
 

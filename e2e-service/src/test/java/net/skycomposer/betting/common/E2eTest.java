@@ -1,9 +1,9 @@
 package net.skycomposer.betting.common;
 
 import lombok.SneakyThrows;
+import net.skycomposer.betting.bettinghouse.BettingHouseTestDataService;
 import net.skycomposer.betting.client.KafkaClient;
 import net.skycomposer.betting.config.MockHelper;
-import net.skycomposer.betting.bettinghouse.BettingHouseTestDataService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

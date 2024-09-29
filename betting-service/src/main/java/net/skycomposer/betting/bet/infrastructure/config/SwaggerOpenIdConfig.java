@@ -1,4 +1,4 @@
-package net.skycomposer.betting.betting.infrastructure.config;
+package net.skycomposer.betting.bet.infrastructure.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.models.Components;

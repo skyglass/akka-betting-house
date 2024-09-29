@@ -1,4 +1,4 @@
-package net.skycomposer.betting.betting.infrastructure.security;
+package net.skycomposer.betting.bet.infrastructure.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

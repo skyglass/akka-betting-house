@@ -26,6 +26,7 @@ public class MarketGrpcClient {
         return MarketResponse
                 .builder()
                 .message(response.getMessage())
+                .marketId(marketData.getMarketId())
                 .build();
     }
 
@@ -35,6 +36,7 @@ public class MarketGrpcClient {
         return MarketResponse
                 .builder()
                 .message(response.getMessage())
+                .marketId(marketData.getMarketId())
                 .build();
     }
 
@@ -46,6 +48,7 @@ public class MarketGrpcClient {
         return MarketResponse
                 .builder()
                 .message(response.getMessage())
+                .marketId(request.getMarketId())
                 .build();
     }
 
@@ -58,13 +61,14 @@ public class MarketGrpcClient {
         return MarketResponse
                 .builder()
                 .message(response.getMessage())
+                .marketId(request.getMarketId())
                 .build();
     }
 
     private MarketProto.MarketData createGrpcRequest(MarketData marketData) {
         MarketProto.MarketData.Builder requestBuilder = MarketProto.MarketData.newBuilder();
          requestBuilder.setMarketId(marketData.getMarketId());
-        if (marketData.getFixture()!= null) {
+        if (marketData.getFixture() != null) {
             MarketProto.FixtureData fixtureRequest = MarketProto.FixtureData.newBuilder()
                     .setId(marketData.getFixture().getId())
                     .setAwayTeam(marketData.getFixture().getAwayTeam())

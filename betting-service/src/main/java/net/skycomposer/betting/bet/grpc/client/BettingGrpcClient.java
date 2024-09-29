@@ -1,18 +1,16 @@
-package net.skycomposer.betting.betting.grpc.client;
+package net.skycomposer.betting.bet.grpc.client;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
 
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import net.skycomposer.betting.bet.grpc.BetProto;
 import net.skycomposer.betting.bet.grpc.BetServiceGrpc;
 import net.skycomposer.betting.common.domain.dto.betting.*;
-import net.skycomposer.betting.common.domain.dto.market.*;
-import net.skycomposer.betting.market.grpc.MarketProto;
-import net.skycomposer.betting.market.grpc.MarketServiceGrpc;
 import net.skycomposer.betting.projection.proto.BetProjectionProto;
 import net.skycomposer.betting.projection.proto.BetProjectionServiceGrpc;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class BettingGrpcClient {
@@ -45,6 +43,7 @@ public class BettingGrpcClient {
         return BetResponse
                 .builder()
                 .message(response.getMessage())
+                .betId(betData.getBetId())
                 .build();
     }
 
@@ -57,6 +56,7 @@ public class BettingGrpcClient {
         return BetResponse
                 .builder()
                 .message(response.getMessage())
+                .betId(request.getBetId())
                 .build();
     }
 
@@ -69,6 +69,7 @@ public class BettingGrpcClient {
         return BetResponse
                 .builder()
                 .message(response.getMessage())
+                .betId(request.getBetId())
                 .build();
     }
 

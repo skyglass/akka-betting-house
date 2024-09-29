@@ -12,5 +12,9 @@ import lombok.NoArgsConstructor;
 public class WalletResponse {
 
     private String message;
+
+    private String walletId;
+
+    private int currentAmount;
 }
 
