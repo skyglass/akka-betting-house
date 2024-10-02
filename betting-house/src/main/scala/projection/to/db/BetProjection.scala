@@ -56,7 +56,7 @@ object BetProjection {
     JdbcProjection.exactlyOnce(
       projectionId = ProjectionId("BetProjection", tag),
       sourceProvider = sourceProvider,
-      handler = () => new BetProjectionHandler(repository),
+      handler = () => new BetResultHandler(repository),
       sessionFactory = () => new ScalikeJdbcSession())(system)
   }
 }

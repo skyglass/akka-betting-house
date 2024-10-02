@@ -165,10 +165,12 @@ object Bet {
     }
   }
 
-  sealed trait Event extends CborSerializable
-  final case class MarketConfirmed(state: OpenState) extends Event
-  final case class FundsGranted(state: OpenState) extends Event
-  final case class ValidationsPassed(state: OpenState) extends Event
+  sealed trait Event extends CborSerializable {
+    def betId: String
+  }
+  final case class MarketConfirmed(betId: String, state: OpenState) extends Event
+  final case class FundsGranted(betId: String, state: OpenState) extends Event
+  final case class ValidationsPassed(betId: String, state: OpenState) extends Event
   final case class Opened(
       betId: String,
       walletId: String,
@@ -182,7 +184,7 @@ object Bet {
       extends Event
   final case class MarketValidationFailed(betId: String, reason: String) extends Event
   final case class Failed(betId: String, reason: String) extends Event
-  final case object Closed extends Event
+  final case class Closed(betId: String) extends Event
 
   def handleEvents(state: State, event: Event): State = event match {
     case Opened(betId, walletId, marketId, odds, stake, result) =>
@@ -190,13 +192,13 @@ object Bet {
         Status(betId, walletId, marketId, odds, stake, result),
         None,
         None)
-    case MarketConfirmed(state) =>
+    case MarketConfirmed(betId, state) =>
       state.copy(marketConfirmed = Some(true))
-    case FundsGranted(state) =>
+    case FundsGranted(betId, state) =>
       state.copy(fundsConfirmed = Some(true))
-    case ValidationsPassed(state) =>
+    case ValidationsPassed(betId, state) =>
       state
-    case Closed =>
+    case Closed(betId) =>
       ClosedState(state.status)
     case Settled(betId) =>
       SettledState(state.status)
@@ -240,7 +242,7 @@ object Bet {
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
     if (command.available) {
-      Effect.persist(MarketConfirmed(state))
+      Effect.persist(MarketConfirmed(state.status.betId, state))
     } else {
         marketValidationFailed(state, s"market odds [${command.marketOdds}] not available", sharding, context)
     }
@@ -251,7 +253,7 @@ object Bet {
       command: WalletFundsReservationGranted): Effect[Event, State] = {
     command.response match {
       case Wallet.Accepted =>
-        Effect.persist(FundsGranted(state))
+        Effect.persist(FundsGranted(state.status.betId, state))
       case Wallet.Rejected =>
         Effect.persist(
           Failed(state.status.betId, "funds not available"))
@@ -347,7 +349,7 @@ object Bet {
       context: ActorContext[Command]): Effect[Event, State] = {
     (state.marketConfirmed, state.fundsConfirmed) match {
       case (Some(true), Some(true)) =>
-        Effect.persist(ValidationsPassed(state))
+        Effect.persist(ValidationsPassed(state.status.betId, state))
       case (_, Some(true)) =>
         marketValidationFailed(state, s"market validation failed (timeout) [${state}]", sharding, context)
       case _ =>
@@ -435,7 +437,7 @@ object Bet {
   private def finish(
       state: State,
       command: Close): Effect[Event, State] =
-    Effect.persist(Closed)
+    Effect.persist(Closed(state.status.betId))
 
   private def cancel(
       state: State,
