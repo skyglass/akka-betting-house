@@ -57,8 +57,10 @@ object Bet {
       response: Wallet.UpdatedResponse)
       extends Command
 
-  private final case class WalletRefundGranted(reason: String, response: Wallet.UpdatedResponse)
-    extends Command
+  private final case class WalletRefundGranted(
+      reason: String,
+      response: Wallet.UpdatedResponse)
+      extends Command
 
   private final case class ValidationsTimedOut(seconds: Int)
       extends Command
@@ -96,8 +98,10 @@ object Bet {
   final case class CancelledState(status: Status) extends State
   final case class FailedState(status: Status, reason: String)
       extends State
-  final case class MarketValidationFailedState(status: Status, reason: String)
-    extends State
+  final case class MarketValidationFailedState(
+      status: Status,
+      reason: String)
+      extends State
   final case class ClosedState(status: Status) extends State
 
   def apply(betId: String): Behavior[Command] = {
@@ -142,13 +146,17 @@ object Bet {
     (state, command) match {
       case (state: UninitializedState, command: Open) =>
         open(state, command, sharding, context, timer)
-      case (state: MarketValidationFailedState, command: WalletFundsReservationGranted) =>
+      case (
+          state: MarketValidationFailedState,
+          command: WalletFundsReservationGranted) =>
         requestWalletRefund(state, sharding, context)
       case (state: MarketValidationFailedState, _) =>
         marketValidationFailed(state)
       case (state: OpenState, command: MarketOddsAvailable) =>
         validateMarket(state, command, sharding, context)
-      case (state: OpenState, command: WalletFundsReservationGranted) =>
+      case (
+          state: OpenState,
+          command: WalletFundsReservationGranted) =>
         validateFunds(state, command)
       case (state: OpenState, command: ValidationsTimedOut) =>
         checkValidations(state, sharding, context)
@@ -168,9 +176,12 @@ object Bet {
   sealed trait Event extends CborSerializable {
     def betId: String
   }
-  final case class MarketConfirmed(betId: String, state: OpenState) extends Event
-  final case class FundsGranted(betId: String, state: OpenState) extends Event
-  final case class ValidationsPassed(betId: String, state: OpenState) extends Event
+  final case class MarketConfirmed(betId: String, state: OpenState)
+      extends Event
+  final case class FundsGranted(betId: String, state: OpenState)
+      extends Event
+  final case class ValidationsPassed(betId: String, state: OpenState)
+      extends Event
   final case class Opened(
       betId: String,
       walletId: String,
@@ -182,7 +193,10 @@ object Bet {
   final case class Settled(betId: String) extends Event
   final case class Cancelled(betId: String, reason: String)
       extends Event
-  final case class MarketValidationFailed(betId: String, reason: String) extends Event
+  final case class MarketValidationFailed(
+      betId: String,
+      reason: String)
+      extends Event
   final case class Failed(betId: String, reason: String) extends Event
   final case class Closed(betId: String) extends Event
 
@@ -244,13 +258,18 @@ object Bet {
     if (command.available) {
       Effect.persist(MarketConfirmed(state.status.betId, state))
     } else {
-        marketValidationFailed(state, s"market odds [${command.marketOdds}] not available", sharding, context)
+      marketValidationFailed(
+        state,
+        s"market odds [${command.marketOdds}] not available",
+        sharding,
+        context)
     }
   }
 
   private def validateFunds(
       state: OpenState,
-      command: WalletFundsReservationGranted): Effect[Event, State] = {
+      command: WalletFundsReservationGranted)
+      : Effect[Event, State] = {
     command.response match {
       case Wallet.Accepted =>
         Effect.persist(FundsGranted(state.status.betId, state))
@@ -296,28 +315,29 @@ object Bet {
     val walletRef =
       sharding.entityRefFor(Wallet.typeKey, command.walletId)
     val walletResponseMapper: ActorRef[Wallet.UpdatedResponse] =
-      context.messageAdapter(rsp => WalletFundsReservationGranted(rsp))
+      context.messageAdapter(rsp =>
+        WalletFundsReservationGranted(rsp))
 
     walletRef ! Wallet.ReserveFunds(
       command.stake,
       walletResponseMapper)
   }
 
-  private def marketValidationFailed(state: OpenState,
-                                     reason: String,
-                                     sharding: ClusterSharding,
-                                     context: ActorContext[Command]): Effect[Event, State] = {
-    Effect.persist(
-        MarketValidationFailed(
-          state.status.betId,
-          reason))
+  private def marketValidationFailed(
+      state: OpenState,
+      reason: String,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
+    Effect
+      .persist(MarketValidationFailed(state.status.betId, reason))
       .thenRun((_: State) =>
         checkRequestWalletRefund(state, sharding, context))
   }
 
-  private def checkRequestWalletRefund(state: OpenState,
-                                       sharding: ClusterSharding,
-                                       context: ActorContext[Command]): Effect[Event, State] = {
+  private def checkRequestWalletRefund(
+      state: OpenState,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
     (state.fundsConfirmed) match {
       case (Some(true)) =>
         requestWalletRefund(state, sharding, context)
@@ -330,7 +350,8 @@ object Bet {
       state: State,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
-    val reason = s"market validations didn't pass and refund should be issued [${state}]"
+    val reason =
+      s"market validations didn't pass and refund should be issued [${state}]"
     val walletRef =
       sharding.entityRefFor(Wallet.typeKey, state.status.walletId)
     val walletResponseMapper: ActorRef[Wallet.UpdatedResponse] =
@@ -351,7 +372,11 @@ object Bet {
       case (Some(true), Some(true)) =>
         Effect.persist(ValidationsPassed(state.status.betId, state))
       case (_, Some(true)) =>
-        marketValidationFailed(state, s"market validation failed (timeout) [${state}]", sharding, context)
+        marketValidationFailed(
+          state,
+          s"market validation failed (timeout) [${state}]",
+          sharding,
+          context)
       case _ =>
         Effect.persist(
           Failed(
@@ -360,11 +385,9 @@ object Bet {
     }
   }
 
-  private def marketValidationFailed(state: MarketValidationFailedState): Effect[Event, State] = {
-        Effect.persist(
-          Failed(
-            state.status.betId,
-            state.reason))
+  private def marketValidationFailed(
+      state: MarketValidationFailedState): Effect[Event, State] = {
+    Effect.persist(Failed(state.status.betId, state.reason))
   }
 
   private final case class Match(doMatch: Boolean, marketOdds: Double)

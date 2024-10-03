@@ -1,22 +1,33 @@
 package example.betting
 
-import akka.actor.testkit.typed.scaladsl.{LogCapturing, ScalaTestWithActorTestKit}
+import akka.actor.testkit.typed.scaladsl.{
+  LogCapturing,
+  ScalaTestWithActorTestKit
+}
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.matchers.should.Matchers
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.typesafe.config.ConfigFactory
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorRef, Behavior}
-import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
+import akka.actor.typed.{ ActorRef, Behavior }
+import akka.persistence.typed.scaladsl.{
+  Effect,
+  EventSourcedBehavior
+}
 import akka.persistence.typed.PersistenceId
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef, EntityTypeKey}
-import akka.cluster.typed.{Cluster, Join}
+import akka.cluster.sharding.typed.scaladsl.{
+  ClusterSharding,
+  Entity,
+  EntityRef,
+  EntityTypeKey
+}
+import akka.cluster.typed.{ Cluster, Join }
 
 import java.time.OffsetDateTime
 import scala.concurrent.duration._
 import org.scalatest.concurrent.Eventually
 
-import java.time.temporal.{ChronoUnit, TemporalUnit}
+import java.time.temporal.{ ChronoUnit, TemporalUnit }
 
 object SuggestionImplSpec {
   val config = ConfigFactory.parseString(
@@ -35,7 +46,7 @@ object SuggestionImplSpec {
 }
 
 class SuggestionImplSpec
-  extends ScalaTestWithActorTestKit(SuggestionImplSpec.config)
+    extends ScalaTestWithActorTestKit(SuggestionImplSpec.config)
     with AnyWordSpecLike
     with Matchers
     with Eventually
@@ -83,8 +94,7 @@ class SuggestionImplSpec
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)
 
-      market ! Market.Close(
-        marketProbe.ref)
+      market ! Market.Close(marketProbe.ref)
 
       val bet = sharding.entityRefFor(Bet.typeKey, "betId1")
 
@@ -144,7 +154,13 @@ class SuggestionImplSpec
       marketProbe.expectMessage(10.seconds, Market.Accepted)
 
       market ! Market.Update(
-        null, Some(OffsetDateTime.now.plus(1000, ChronoUnit.SECONDS).toInstant.toEpochMilli), null,
+        null,
+        Some(
+          OffsetDateTime.now
+            .plus(1000, ChronoUnit.SECONDS)
+            .toInstant
+            .toEpochMilli),
+        null,
         marketProbe.ref)
 
       val bet = sharding.entityRefFor(Bet.typeKey, betId)
@@ -159,7 +175,7 @@ class SuggestionImplSpec
 
         val expected = Bet.OpenState(
           Bet
-          .Status(betId, walletId, marketId, 1.25, 100, 0))
+            .Status(betId, walletId, marketId, 1.25, 100, 0))
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }

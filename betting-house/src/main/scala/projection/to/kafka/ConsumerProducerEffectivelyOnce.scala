@@ -3,11 +3,19 @@ package betting.house.projection;
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.kafka.ConsumerMessage.TransactionalMessage
-import akka.kafka.scaladsl.{Consumer, Transactional}
-import akka.kafka.{ConsumerSettings, ProducerMessage, ProducerSettings, Subscriptions}
+import akka.kafka.scaladsl.{ Consumer, Transactional }
+import akka.kafka.{
+  ConsumerSettings,
+  ProducerMessage,
+  ProducerSettings,
+  Subscriptions
+}
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
+import org.apache.kafka.common.serialization.{
+  StringDeserializer,
+  StringSerializer
+}
 
 import scala.concurrent.ExecutionContext
 import scala.io.StdIn
@@ -18,7 +26,10 @@ object ConsumerProducerEffectivelyOnce {
 
   implicit val ec = ExecutionContext.Implicits.global
 
-  def createConsumerProducer(groupId: String, transactionalId: String, subscriptionTopic: String) = {
+  def createConsumerProducer(
+      groupId: String,
+      transactionalId: String,
+      subscriptionTopic: String) = {
 
     val bootstrapServers = "127.0.0.1:9092"
 

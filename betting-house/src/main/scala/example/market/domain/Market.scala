@@ -156,7 +156,11 @@ object Market {
       state: State,
       command: Open): ReplyEffect[Opened, State] = {
     val opened =
-      Opened(state.status.marketId, command.fixture, command.odds, command.opensAt)
+      Opened(
+        state.status.marketId,
+        command.fixture,
+        command.odds,
+        command.opensAt)
     Effect
       .persist(opened)
       .thenReply(command.replyTo)(_ => Accepted)
@@ -166,7 +170,11 @@ object Market {
       state: State,
       command: Update): ReplyEffect[Updated, State] = {
     val updated =
-      Updated(state.status.marketId, command.odds, command.result, command.opensAt)
+      Updated(
+        state.status.marketId,
+        command.odds,
+        command.result,
+        command.opensAt)
     Effect
       .persist(updated)
       .thenReply(command.replyTo)(_ => Accepted)

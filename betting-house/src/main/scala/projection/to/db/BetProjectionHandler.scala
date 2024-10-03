@@ -12,7 +12,7 @@ import example.betting.Bet
 class BetProjectionHandler(repository: BetRepository)
     extends JdbcHandler[EventEnvelope[Bet.Event], ScalikeJdbcSession] {
 
-  val logger = LoggerFactory.getLogger(classOf[BetResultHandler])
+  val logger = LoggerFactory.getLogger(classOf[BetProjectionHandler])
 
   override def process(
       session: ScalikeJdbcSession,

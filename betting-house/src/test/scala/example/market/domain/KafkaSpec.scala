@@ -1,6 +1,5 @@
 package example.market.domain
 
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterAll
@@ -8,13 +7,13 @@ import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.clients.producer.ProducerRecord
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.kafka.{ProducerMessage, ProducerSettings}
+import akka.kafka.{ ProducerMessage, ProducerSettings }
 import akka.kafka.scaladsl.Producer
 import akka.stream.scaladsl.Source
 import akka.Done
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
 
 object KafkaSpec {
@@ -45,7 +44,7 @@ object KafkaSpec {
 }
 
 class KafkaSpec
-  extends AnyFlatSpec
+    extends AnyFlatSpec
     with Matchers
     with BeforeAndAfterAll {
 
@@ -53,7 +52,8 @@ class KafkaSpec
 
   "a producer" should "write to Kafka" in {
 
-    val config = KafkaSpec.config.getConfig("akka.kafka.producer").resolve()
+    val config =
+      KafkaSpec.config.getConfig("akka.kafka.producer").resolve()
 
     val topicDest = KafkaSpec.config.getString("kafka.test.topic")
 

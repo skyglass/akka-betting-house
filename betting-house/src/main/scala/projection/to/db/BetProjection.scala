@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory
 object BetProjection {
 
   def init(
-      system: ActorSystem[_],
-      repository: BetRepository): Unit = {
+            system: ActorSystem[_],
+            repository: BetRepository): Unit = {
     ShardedDaemonProcess(system).init(
       name = "bet-projection",
       Bet.tags.size,
@@ -40,10 +40,10 @@ object BetProjection {
   }
 
   def createProjection(
-      system: ActorSystem[_],
-      repository: BetRepository,
-      index: Int)
-      : ExactlyOnceProjection[Offset, EventEnvelope[Bet.Event]] = {
+                        system: ActorSystem[_],
+                        repository: BetRepository,
+                        index: Int)
+  : ExactlyOnceProjection[Offset, EventEnvelope[Bet.Event]] = {
 
     val tag = Bet.tags(index)
 
@@ -56,7 +56,7 @@ object BetProjection {
     JdbcProjection.exactlyOnce(
       projectionId = ProjectionId("BetProjection", tag),
       sourceProvider = sourceProvider,
-      handler = () => new BetResultHandler(repository),
+      handler = () => new BetProjectionHandler(repository),
       sessionFactory = () => new ScalikeJdbcSession())(system)
   }
 }

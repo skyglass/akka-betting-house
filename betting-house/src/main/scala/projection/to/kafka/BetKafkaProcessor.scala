@@ -11,7 +11,8 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
-import akka.actor.typed.{ActorSystem => TypedActorSystem}
+import akka.actor.typed.{ ActorSystem => TypedActorSystem }
+import com.google.protobuf.any.{ Any => PbAny }
 import akka.kafka.scaladsl.Committer
 import akka.kafka.scaladsl.Consumer
 import akka.kafka.CommitterSettings
@@ -19,23 +20,30 @@ import akka.kafka.Subscriptions
 import akka.kafka.cluster.sharding.KafkaClusterSharding
 import akka.pattern.retry
 import org.slf4j.LoggerFactory
+import example.betting.Bet
+import example.bet.grpc.BetProto
 
-object UserEventsKafkaProcessor {
+object BetKafkaProcessor {
 
   sealed trait Command
 
-  private case class KafkaConsumerStopped(reason: Try[Any]) extends Command
+  private case class KafkaConsumerStopped(reason: Try[Any])
+      extends Command
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def apply(shardRegion: ActorRef[UserEvents.Command], processorSettings: ProcessorSettings): Behavior[Nothing] = {
+  def apply(
+      shardRegion: ActorRef[Bet.Command],
+      processorSettings: BetKafkaProcessorSettings)
+      : Behavior[Nothing] = {
     Behaviors
       .setup[Command] { ctx =>
         implicit val sys: TypedActorSystem[_] = ctx.system
-        val result = startConsumingFromTopic(shardRegion, processorSettings)
+        val result =
+          startConsumingFromTopic(shardRegion, processorSettings)
 
-        ctx.pipeToSelf(result) {
-          result => KafkaConsumerStopped(result)
+        ctx.pipeToSelf(result) { result =>
+          KafkaConsumerStopped(result)
         }
 
         Behaviors.receiveMessage[Command] {
@@ -47,39 +55,42 @@ object UserEventsKafkaProcessor {
       .narrow
   }
 
-
-  private def startConsumingFromTopic(shardRegion: ActorRef[UserEvents.Command], processorSettings: ProcessorSettings)
-                                     (implicit actorSystem: TypedActorSystem[_]): Future[Done] = {
+  private def startConsumingFromTopic(
+      shardRegion: ActorRef[Bet.Command],
+      processorSettings: BetKafkaProcessorSettings)(
+      implicit actorSystem: TypedActorSystem[_]): Future[Done] = {
 
     implicit val ec: ExecutionContext = actorSystem.executionContext
-    implicit val scheduler: Scheduler = actorSystem.toClassic.scheduler
+    implicit val scheduler: Scheduler =
+      actorSystem.toClassic.scheduler
     val classic = actorSystem.toClassic
 
-    val rebalanceListener = KafkaClusterSharding(classic).rebalanceListener(processorSettings.entityTypeKey)
+    val rebalanceListener = KafkaClusterSharding(classic)
+      .rebalanceListener(processorSettings.entityTypeKey)
 
     val subscription = Subscriptions
       .topics(processorSettings.topics: _*)
       .withRebalanceListener(rebalanceListener.toClassic)
 
-
-    Consumer.sourceWithOffsetContext(processorSettings.kafkaConsumerSettings(), subscription)
+    Consumer
+      .sourceWithOffsetContext(
+        processorSettings.kafkaConsumerSettings(),
+        subscription)
       // MapAsync and Retries can be replaced by reliable delivery
       .mapAsync(20) { record =>
-        logger.info(s"user id consumed kafka partition ${record.key()}->${record.partition()}")
-        retry(() =>
-          shardRegion.ask[Done](replyTo => {
-            val purchaseProto = UserPurchaseProto.parseFrom(record.value())
-            UserEvents.UserPurchase(
-              purchaseProto.userId,
-              purchaseProto.product,
-              purchaseProto.quantity,
-              purchaseProto.price,
-              replyTo)
-          })(processorSettings.askTimeout, actorSystem.scheduler),
+        logger.info(
+          s"user id consumed kafka partition ${record.key()}->${record.partition()}")
+        retry(
+          () =>
+            shardRegion.ask[Bet.Response](replyTo => {
+              val purchaseProto =
+                PbAny.parseFrom(record.value())
+              Bet.Settle(1, replyTo)
+            })(processorSettings.askTimeout, actorSystem.scheduler),
           attempts = 5,
-          delay = 1.second
-        )
+          delay = 1.second)
       }
-      .runWith(Committer.sinkWithOffsetContext(CommitterSettings(classic)))
+      .runWith(Committer.sinkWithOffsetContext(
+        CommitterSettings(classic)))
   }
 }
