@@ -11,8 +11,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
-import akka.actor.typed.{ ActorSystem => TypedActorSystem }
-import com.google.protobuf.any.{ Any => PbAny }
+import akka.actor.typed.{ActorSystem => TypedActorSystem}
 import akka.kafka.scaladsl.Committer
 import akka.kafka.scaladsl.Consumer
 import akka.kafka.CommitterSettings
@@ -21,7 +20,6 @@ import akka.kafka.cluster.sharding.KafkaClusterSharding
 import akka.pattern.retry
 import org.slf4j.LoggerFactory
 import example.betting.Bet
-import example.bet.grpc.BetProto
 
 object BetKafkaProcessor {
 
@@ -83,9 +81,8 @@ object BetKafkaProcessor {
         retry(
           () =>
             shardRegion.ask[Bet.Response](replyTo => {
-              val purchaseProto =
-                PbAny.parseFrom(record.value())
-              Bet.Settle(1, replyTo)
+              val betProto = example.bet.grpc.Bet.parseFrom(record.value())
+              Bet.Settle(betProto.result, replyTo)
             })(processorSettings.askTimeout, actorSystem.scheduler),
           attempts = 5,
           delay = 1.second)

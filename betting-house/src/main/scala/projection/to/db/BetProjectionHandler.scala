@@ -1,41 +1,64 @@
 package betting.house.projection
 
+import akka.Done
+import akka.kafka.scaladsl.SendProducer
 import org.slf4j.LoggerFactory
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.jdbc.scaladsl.JdbcHandler
-import example.repository.scalike.{
-  BetRepository,
-  ScalikeJdbcSession
-}
-import example.betting.Bet
+import com.google.protobuf.any.{Any => PbAny}
+import com.google.protobuf.empty.Empty
+import example.repository.scalike.{BetRepository, ScalikeJdbcSession}
+import example.betting.{Bet, Market}
+import org.apache.kafka.clients.producer.ProducerRecord
 
-class BetProjectionHandler(repository: BetRepository)
+import scala.concurrent.{ExecutionContext, Future}
+
+class BetProjectionHandler(repository: BetRepository, producer: SendProducer[String, Array[Byte]])
     extends JdbcHandler[EventEnvelope[Bet.Event], ScalikeJdbcSession] {
 
-  val logger = LoggerFactory.getLogger(classOf[BetProjectionHandler])
+  val log = LoggerFactory.getLogger(classOf[BetProjectionHandler])
+  implicit val ec = ExecutionContext.global
 
   override def process(
       session: ScalikeJdbcSession,
       envelope: EventEnvelope[Bet.Event]): Unit = {
     envelope.event match {
-      case Bet.Opened(
-          betId,
-          walletId,
-          marketId,
-          odds,
-          stake,
-          result) =>
+      case b: Bet.Opened =>
+        sendEvent(b)
         repository.addBet(
-          betId,
-          walletId,
-          marketId,
-          odds,
-          stake,
-          result,
+          b.betId,
+          b.walletId,
+          b.marketId,
+          b.odds,
+          b.stake,
+          b.result,
           session)
       case x =>
-        logger.debug("ignoring event {} in projection", x)
+        log.debug("ignoring event {} in projection", x)
 
     }
+  }
+
+  private def sendEvent(event: Bet.Opened): Future[Done] = {
+    val topic = s"bet-result-${event.marketId}";
+    log.debug(
+      s"sending bet result event [$event] to topic [${topic}]}")
+
+    val serializedEvent = serialize(event, topic)
+    if (!serializedEvent.isEmpty) {
+      val record =
+        new ProducerRecord(topic, event.betId, serializedEvent)
+      producer.send(record).map { _ =>
+        log.debug(s"published event [$event] to topic [$topic]}")
+        Done
+      }
+    } else {
+      Future.successful(Done)
+    }
+  }
+
+  private def serialize(event: Bet.Opened, topic: String): Array[Byte] = {
+    val proto = example.bet.grpc.Bet(event.betId, event.walletId, event.marketId, event.odds, event.stake, event.result)
+    PbAny.pack(proto, topic).toByteArray
   }
 }
