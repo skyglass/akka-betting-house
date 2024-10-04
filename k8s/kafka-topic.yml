@@ -1,29 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
-  name: bet-projection
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  partitions: 3
-  replicas: 3
-
----
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaTopic
-metadata:
   name: market-projection
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  partitions: 3
-  replicas: 3
-
----
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaTopic
-metadata:
-  name: bet-result
   labels:
     strimzi.io/cluster: my-cluster
 spec:

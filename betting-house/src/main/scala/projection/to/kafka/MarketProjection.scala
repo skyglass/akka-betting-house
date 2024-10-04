@@ -5,8 +5,11 @@ import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
-import akka.projection.{ProjectionBehavior, ProjectionId}
-import akka.projection.scaladsl.{AtLeastOnceProjection, SourceProvider}
+import akka.projection.{ ProjectionBehavior, ProjectionId }
+import akka.projection.scaladsl.{
+  AtLeastOnceProjection,
+  SourceProvider
+}
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.jdbc.scaladsl.JdbcProjection
@@ -15,13 +18,18 @@ import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import example.repository.scalike.ScalikeJdbcSession
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.SendProducer
-import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
+import org.apache.kafka.common.serialization.{
+  ByteArraySerializer,
+  StringSerializer
+}
 import example.betting.Market
 
 //Bets grouped per Market and Wallet
 object MarketProjection { //BPM
 
-  def init(system: ActorSystem[_], producer: SendProducer[String, Array[Byte]]): Unit = {
+  def init(
+      system: ActorSystem[_],
+      producer: SendProducer[String, Array[Byte]]): Unit = {
     val topic =
       system.settings.config
         .getString("kafka.market-projection.topic")

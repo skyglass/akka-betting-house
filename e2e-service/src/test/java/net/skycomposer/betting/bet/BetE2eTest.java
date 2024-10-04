@@ -35,7 +35,6 @@ public class BetE2eTest extends E2eTest {
     @Autowired
     private BetTestHelper betTestHelper;
 
-
     @Test
     @SneakyThrows
     void test() {

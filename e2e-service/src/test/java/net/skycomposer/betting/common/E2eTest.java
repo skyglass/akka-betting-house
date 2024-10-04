@@ -31,7 +31,6 @@ public abstract class E2eTest {
     @SneakyThrows
     void cleanup() {
         kafkaClient.clearMessages("market-projection");
-        kafkaClient.clearMessages("bet-projection");
         mockHelper.mockCredentials(securityOauth2Username, securityOauth2Password);
         bettingHouseTestDataService.resetDatabase();
         //TimeUnit.MILLISECONDS.sleep(Duration.ofSeconds(1).toMillis());

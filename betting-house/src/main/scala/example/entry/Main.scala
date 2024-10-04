@@ -1,5 +1,6 @@
 package example.betting
 
+import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
@@ -8,13 +9,12 @@ import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 
 import scala.concurrent.{ ExecutionContext, Future }
-import akka.http.scaladsl.{ Http, HttpConnectionContext }
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.SendProducer
-import example.market.grpc.{
-  MarketServiceHandler,
-  MarketServiceImplSharding
+import org.apache.kafka.clients.admin.{
+  AdminClient,
+  AdminClientConfig,
+  NewTopic
 }
 import example.bet.grpc.BetServiceServer
 
@@ -35,6 +35,8 @@ import org.apache.kafka.common.serialization.{
   ByteArraySerializer,
   StringSerializer
 }
+
+import java.util.Collections
 
 object Main {
 
@@ -58,6 +60,7 @@ object Main {
 
       val betRepository = new BetRepositoryImpl()
       val producer = createProducer(system)
+      val adminClient = createKafkaAdminClient(system)
       BetProjectionServer.init(betRepository)
       BetProjection.init(system, betRepository, producer)
       MarketProjection.init(system, producer)
@@ -85,6 +88,30 @@ object Main {
       sendProducer.close()
     } //otherwise trying to restart the application you would probably get [WARN] [org.apache.kafka.common.utils.AppInfoParser] [] [betting-house-akka.kafka.default-dispatcher-X] - Error registering AppInfo mbean javax.management.InstanceAlreadyExistsException: kafka.producer:type=app-info,id=producer-
     sendProducer
+  }
+
+  private def createKafkaAdminClient(
+      system: ActorSystem[_]): AdminClient = {
+
+    val producerSettings =
+      ProducerSettings( //they look up on creation at "akka.kafka.producer" in .conf
+        system,
+        new StringSerializer,
+        new ByteArraySerializer)
+    val config = new java.util.Properties
+    config.putAll(producerSettings.getProperties)
+    val admin = AdminClient.create(config)
+    val newTopic1 = new NewTopic("test1", 3, 3: Short)
+    val newTopic2 = new NewTopic("test2", 3, 3: Short)
+    //admin.createTopics(java.util.Arrays.asList(newTopic1, newTopic2))
+    admin.deleteTopics(java.util.Arrays.asList(newTopic1.name()))
+    CoordinatedShutdown(system).addTask(
+      CoordinatedShutdown.PhaseBeforeActorSystemTerminate,
+      "closing kafka admin client") { () =>
+      admin.close()
+      Future.successful(Done)
+    }
+    admin
   }
 
 }
