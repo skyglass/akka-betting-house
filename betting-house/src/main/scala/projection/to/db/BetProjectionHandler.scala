@@ -16,7 +16,9 @@ import org.apache.kafka.clients.producer.ProducerRecord
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class BetProjectionHandler(repository: BetRepository)
+class BetProjectionHandler(
+    repository: BetRepository,
+    producer: SendProducer[String, Array[Byte]])
     extends JdbcHandler[EventEnvelope[Bet.Event], ScalikeJdbcSession] {
 
   val log = LoggerFactory.getLogger(classOf[BetProjectionHandler])
@@ -27,7 +29,7 @@ class BetProjectionHandler(repository: BetRepository)
       envelope: EventEnvelope[Bet.Event]): Unit = {
     envelope.event match {
       case b: Bet.Opened =>
-        // sendEvent(b)
+        sendEvent(b)
         repository.addBet(
           b.betId,
           b.walletId,
@@ -42,7 +44,7 @@ class BetProjectionHandler(repository: BetRepository)
     }
   }
 
-  /*private def sendEvent(event: Bet.Opened): Future[Done] = {
+  private def sendEvent(event: Bet.Opened): Future[Done] = {
     //val topic = s"bet-result-${event.marketId}"
     val topic = "bet-result"
     log.debug(
@@ -52,10 +54,10 @@ class BetProjectionHandler(repository: BetRepository)
     if (!serializedEvent.isEmpty) {
       val record =
         new ProducerRecord(topic, event.betId, serializedEvent)
-      //producer.send(record).map { _ =>
-      //  log.debug(s"published event [$event] to topic [$topic]}")
-      //  Done
-      //}
+      producer.send(record).map { _ =>
+        log.debug(s"published event [$event] to topic [$topic]}")
+        Done
+      }
       Future.successful(Done)
     } else {
       Future.successful(Done)
@@ -73,5 +75,5 @@ class BetProjectionHandler(repository: BetRepository)
       event.stake,
       event.result)
     PbAny.pack(proto, topic).toByteArray
-  }*/
+  }
 }

@@ -11,7 +11,7 @@ import akka.projection.ProjectionBehavior
 import akka.projection.jdbc.scaladsl.{ JdbcHandler, JdbcProjection }
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
-import akka.kafka.{ ProducerSettings }
+import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.SendProducer
 import akka.persistence.query.Offset
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
@@ -29,15 +29,15 @@ object BetProjection {
 
   def init(
       system: ActorSystem[_],
-      repository: BetRepository): Unit = {
-    //val producer = createProducer(system)
+      repository: BetRepository,
+      producer: SendProducer[String, Array[Byte]]): Unit = {
 
     ShardedDaemonProcess(system).init(
       name = "bet-projection",
       Bet.tags.size,
       index =>
         ProjectionBehavior(
-          createProjection(system, repository, index)),
+          createProjection(system, repository, producer, index)),
       ShardedDaemonProcessSettings(system),
       Some(ProjectionBehavior.Stop))
   }
@@ -45,6 +45,7 @@ object BetProjection {
   def createProjection(
       system: ActorSystem[_],
       repository: BetRepository,
+      producer: SendProducer[String, Array[Byte]],
       index: Int)
       : ExactlyOnceProjection[Offset, EventEnvelope[Bet.Event]] = {
 
@@ -59,24 +60,7 @@ object BetProjection {
     JdbcProjection.exactlyOnce(
       projectionId = ProjectionId("BetProjection", tag),
       sourceProvider = sourceProvider,
-      handler = () => new BetProjectionHandler(repository),
+      handler = () => new BetProjectionHandler(repository, producer),
       sessionFactory = () => new ScalikeJdbcSession())(system)
   }
-
-  /*def createProducer(
-      system: ActorSystem[_]): SendProducer[String, Array[Byte]] = {
-
-    val producerSettings =
-      ProducerSettings( //they look up on creation at "akka.kafka.producer" in .conf
-        system,
-        new StringSerializer,
-        new ByteArraySerializer)
-    val sendProducer = SendProducer(producerSettings)(system)
-    CoordinatedShutdown(system).addTask(
-      CoordinatedShutdown.PhaseBeforeActorSystemTerminate,
-      "closing send producer") { () =>
-      sendProducer.close()
-    } //otherwise trying to restart the application you would probably get [WARN] [org.apache.kafka.common.utils.AppInfoParser] [] [betting-house-akka.kafka.default-dispatcher-X] - Error registering AppInfo mbean javax.management.InstanceAlreadyExistsException: kafka.producer:type=app-info,id=producer-
-    sendProducer
-  }*/
 }
