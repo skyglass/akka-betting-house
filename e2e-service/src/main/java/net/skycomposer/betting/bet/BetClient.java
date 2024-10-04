@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.*;
 public interface BetClient {
 
     @GetMapping("/get-state/{betId}")
-    BetData getState(@PathVariable String betId);
+    BetData getState(@PathVariable("betId") String betId);
 
     @GetMapping("/get-bets-by-market/{marketId}")
-    SumStakesData getBetsByMarket(@PathVariable String marketId);
+    SumStakesData getBetsByMarket(@PathVariable("marketId") String marketId);
 
     @PostMapping("/open")
     @ResponseStatus(HttpStatus.CREATED)

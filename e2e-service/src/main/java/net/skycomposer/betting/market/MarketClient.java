@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public interface MarketClient {
 
     @GetMapping("/get-state/{marketId}")
-    MarketData getState(@PathVariable String marketId);
+    MarketData getState(@PathVariable("marketId") String marketId);
 
     @PostMapping("/open")
     @ResponseStatus(HttpStatus.CREATED)

@@ -11,7 +11,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
-import akka.actor.typed.{ActorSystem => TypedActorSystem}
+import akka.actor.typed.{ ActorSystem => TypedActorSystem }
 import akka.kafka.scaladsl.Committer
 import akka.kafka.scaladsl.Consumer
 import akka.kafka.CommitterSettings
@@ -81,7 +81,8 @@ object BetKafkaProcessor {
         retry(
           () =>
             shardRegion.ask[Bet.Response](replyTo => {
-              val betProto = example.bet.grpc.Bet.parseFrom(record.value())
+              val betProto =
+                example.bet.grpc.Bet.parseFrom(record.value())
               Bet.Settle(betProto.result, replyTo)
             })(processorSettings.askTimeout, actorSystem.scheduler),
           attempts = 5,

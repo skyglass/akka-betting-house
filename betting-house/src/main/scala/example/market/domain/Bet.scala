@@ -30,8 +30,8 @@ object Bet {
 
   val typeKey = EntityTypeKey[Command]("bet")
 
-  sealed trait Command
-  trait ReplyCommand extends Command with CborSerializable {
+  sealed trait Command extends CborSerializable
+  trait ReplyCommand extends Command {
     def replyTo: ActorRef[Response]
   }
   final case class Open(
@@ -68,9 +68,11 @@ object Bet {
   private final case class Close(reason: String) extends Command
 
   sealed trait Response
-  final case object Accepted extends Response
+  final case object Accepted extends Response with CborSerializable
   final case class RequestUnaccepted(reason: String) extends Response
-  final case class CurrentState(state: State) extends Response
+  final case class CurrentState(state: State)
+      extends Response
+      with CborSerializable
 
   //how do I know I bet to the winner or the looser or draw??
   final case class Status(

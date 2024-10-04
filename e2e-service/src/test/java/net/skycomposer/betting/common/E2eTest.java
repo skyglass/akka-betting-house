@@ -22,7 +22,7 @@ public abstract class E2eTest {
     private MockHelper mockHelper;
 
     @Autowired
-    private BettingHouseTestDataService customerTestDataService;
+    private BettingHouseTestDataService bettingHouseTestDataService;
 
     @Autowired
     private KafkaClient kafkaClient;
@@ -33,7 +33,7 @@ public abstract class E2eTest {
         kafkaClient.clearMessages("market-projection");
         kafkaClient.clearMessages("bet-projection");
         mockHelper.mockCredentials(securityOauth2Username, securityOauth2Password);
-        customerTestDataService.resetDatabase();
+        bettingHouseTestDataService.resetDatabase();
         //TimeUnit.MILLISECONDS.sleep(Duration.ofSeconds(1).toMillis());
     }
 }

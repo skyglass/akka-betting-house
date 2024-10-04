@@ -5,6 +5,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.time.Duration;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,27 +39,29 @@ public class BetE2eTest extends E2eTest {
     @Test
     @SneakyThrows
     void test() {
-        String betId = "betId";
-        String walletId = "walletId1";
+        String betId = UUID.randomUUID().toString();
+        String walletId = UUID.randomUUID().toString();
         int walletBalance = 100;
-        String marketId = "marketId1";
+        String marketId = UUID.randomUUID().toString();
         int betStake = 50;
         double betOdds = 2.8;
         MarketData.Result betResult = MarketData.Result.TIE;
 
         WalletResponse walletResponse = customerTestHelper.createWallet(walletId, walletBalance);
-        assertThat(walletResponse.getMessage(), equalTo("test"));
+        assertThat(walletResponse.getMessage(), equalTo("The request has been accepted for processing, but the processing has not been completed."));
         MarketResponse marketResponse = marketTestHelper.createMarket(marketId);
-        assertThat(marketResponse.getMessage(), equalTo("test"));
+        assertThat(marketResponse.getMarketId(), equalTo(marketId));
+        assertThat(marketResponse.getMessage(), equalTo("initialized"));
 
         BetResponse betResponse = betTestHelper.createBet(betId, marketId, walletId, betStake, betOdds, betResult);
-        assertThat(betResponse.getMessage(), equalTo("test"));
+        assertThat(betResponse.getBetId(), equalTo(betId));
+        assertThat(betResponse.getMessage(), equalTo("initialized"));
 
         BetData betData =  RetryHelper.retry(() ->  betTestHelper.getState(betId));
 
         assertThat(betData.getWalletId(), equalTo(walletId));
         assertThat(betData.getMarketId(), equalTo(marketId));
-        assertThat(betData.getBetId(), equalTo(marketId));
+        assertThat(betData.getBetId(), equalTo(betId));
         assertThat(betData.getResult(), equalTo(betResult.getValue()));
         assertThat(betData.getStake(), equalTo(betStake));
         assertThat(betData.getOdds(), equalTo(betOdds));
@@ -68,25 +71,25 @@ public class BetE2eTest extends E2eTest {
                 , () -> {
                     customerTestHelper.removeFunds(walletId, 50);
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
-                    while (walletData.getAmount() != 0) {
+                    while (walletData.getAmount() != 50) {
                         walletData = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(walletData.getAmount(), equalTo(0));
-                }, () -> "Wallet amount is not reduced to zero; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
+                    assertThat(walletData.getAmount(), equalTo(50));
+                }, () -> "Wallet amount is not reduced to 50; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
         );
 
         customerTestHelper.addFunds(walletId, 30);
+        customerTestHelper.removeFunds(walletId, 50);
 
         assertTimeoutPreemptively(
                 Duration.ofSeconds(10)
                 , () -> {
-                    customerTestHelper.removeFunds(walletId, 50);
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
-                    while (walletData.getAmount() != 0) {
+                    while (walletData.getAmount() != 30) {
                         walletData = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(walletData.getAmount(), equalTo(0));
-                }, () -> "Wallet amount is not reduced to zero; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
+                    assertThat(walletData.getAmount(), equalTo(30));
+                }, () -> "Wallet amount is not reduced to thirty; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
         );
     }
 

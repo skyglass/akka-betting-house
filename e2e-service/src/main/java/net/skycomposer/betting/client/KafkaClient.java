@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface KafkaClient {
 
     @DeleteMapping("/topics/{topicName}/messages")
-    public ResponseEntity<String> clearMessages(@PathVariable String topicName);
+    public ResponseEntity<String> clearMessages(@PathVariable("topicName") String topicName);
 }
