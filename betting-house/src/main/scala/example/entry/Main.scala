@@ -21,6 +21,7 @@ import scala.io.StdIn
 import example.bet.akka.http.WalletServiceServer
 import example.repository.scalike.BetRepositoryImpl
 import betting.house.projection.{
+  BetProjection,
   BetProjectionServer,
   MarketProjection
 }
@@ -52,6 +53,7 @@ object Main {
 
       val betRepository = new BetRepositoryImpl()
       BetProjectionServer.init(betRepository)
+      BetProjection.init(system, betRepository)
       MarketProjection.init(system)
     } catch {
       case NonFatal(ex) =>

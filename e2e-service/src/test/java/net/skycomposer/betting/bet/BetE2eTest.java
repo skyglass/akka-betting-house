@@ -69,7 +69,6 @@ public class BetE2eTest extends E2eTest {
         assertTimeoutPreemptively(
                 Duration.ofSeconds(10)
                 , () -> {
-                    customerTestHelper.removeFunds(walletId, 50);
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
                     while (walletData.getAmount() != 50) {
                         walletData = customerTestHelper.findWalletById(walletId);
@@ -78,8 +77,8 @@ public class BetE2eTest extends E2eTest {
                 }, () -> "Wallet amount is not reduced to 50; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
         );
 
-        customerTestHelper.addFunds(walletId, 30);
         customerTestHelper.removeFunds(walletId, 50);
+        customerTestHelper.addFunds(walletId, 30);
 
         assertTimeoutPreemptively(
                 Duration.ofSeconds(10)

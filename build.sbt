@@ -46,7 +46,6 @@ lazy val `betting-house` = project
         "org.scalikejdbc" %% "scalikejdbc-config" % ScalikeJdbcVersion,
         "org.postgresql" % "postgresql" % "42.2.18",
         "com.typesafe.akka" %% "akka-stream-kafka" % "2.1.1",
-        "com.typesafe.akka" %% "akka-stream-kafka-cluster-sharding" % AkkaStreamKafka,
         "com.lightbend.akka" %% "akka-projection-core" % AkkaProjectionVersion,
         "com.lightbend.akka" %% "akka-projection-eventsourced" % AkkaProjectionVersion,
         "com.lightbend.akka" %% "akka-projection-jdbc" % AkkaProjectionVersion

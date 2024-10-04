@@ -67,12 +67,10 @@ object Bet {
   private final case class Fail(reason: String) extends Command
   private final case class Close(reason: String) extends Command
 
-  sealed trait Response
-  final case object Accepted extends Response with CborSerializable
+  sealed trait Response extends CborSerializable
+  final case object Accepted extends Response
   final case class RequestUnaccepted(reason: String) extends Response
-  final case class CurrentState(state: State)
-      extends Response
-      with CborSerializable
+  final case class CurrentState(state: State) extends Response
 
   //how do I know I bet to the winner or the looser or draw??
   final case class Status(
@@ -84,27 +82,39 @@ object Bet {
       result: Int)
       extends CborSerializable
   object Status {
-    def empty(marketId: String) =
-      Status(marketId, "uninitialized", "uninitialized", -1, -1, 0)
+    def empty(betId: String) =
+      Status(betId, "uninitialized", "uninitialized", -1, -1, 0)
   }
-  sealed trait State extends CborSerializable {
+
+  sealed trait StatusState extends CborSerializable {
     def status: Status
   }
-  final case class UninitializedState(status: Status) extends State
+
+  sealed class State(override val status: Status) extends StatusState
+
+  final case class UninitializedState(override val status: Status)
+      extends State(status)
   final case class OpenState(
-      status: Status,
+      override val status: Status,
       marketConfirmed: Option[Boolean] = None,
       fundsConfirmed: Option[Boolean] = None)
-      extends State // the ask user when market no longer available
-  final case class SettledState(status: Status) extends State
-  final case class CancelledState(status: Status) extends State
-  final case class FailedState(status: Status, reason: String)
-      extends State
-  final case class MarketValidationFailedState(
-      status: Status,
+      extends State(
+        status
+      ) // the ask user when market no longer available
+  final case class SettledState(override val status: Status)
+      extends State(status)
+  final case class CancelledState(override val status: Status)
+      extends State(status)
+  final case class FailedState(
+      override val status: Status,
       reason: String)
-      extends State
-  final case class ClosedState(status: Status) extends State
+      extends State(status)
+  final case class MarketValidationFailedState(
+      override val status: Status,
+      reason: String)
+      extends State(status)
+  final case class ClosedState(override val status: Status)
+      extends State(status)
 
   def apply(betId: String): Behavior[Command] = {
     Behaviors.withTimers { timers =>
@@ -202,29 +212,30 @@ object Bet {
   final case class Failed(betId: String, reason: String) extends Event
   final case class Closed(betId: String) extends Event
 
-  def handleEvents(state: State, event: Event): State = event match {
-    case Opened(betId, walletId, marketId, odds, stake, result) =>
-      OpenState(
-        Status(betId, walletId, marketId, odds, stake, result),
-        None,
-        None)
-    case MarketConfirmed(betId, state) =>
-      state.copy(marketConfirmed = Some(true))
-    case FundsGranted(betId, state) =>
-      state.copy(fundsConfirmed = Some(true))
-    case ValidationsPassed(betId, state) =>
-      state
-    case Closed(betId) =>
-      ClosedState(state.status)
-    case Settled(betId) =>
-      SettledState(state.status)
-    case Cancelled(betId, reason) =>
-      CancelledState(state.status)
-    case MarketValidationFailed(_, reason) =>
-      MarketValidationFailedState(state.status, reason)
-    case Failed(_, reason) =>
-      FailedState(state.status, reason)
-  }
+  def handleEvents(state: State, event: Event): State =
+    event match {
+      case Opened(betId, walletId, marketId, odds, stake, result) =>
+        OpenState(
+          Status(betId, walletId, marketId, odds, stake, result),
+          None,
+          None)
+      case MarketConfirmed(betId, state) =>
+        state.copy(marketConfirmed = Some(true))
+      case FundsGranted(betId, state) =>
+        state.copy(fundsConfirmed = Some(true))
+      case ValidationsPassed(betId, state) =>
+        state
+      case Closed(betId) =>
+        ClosedState(state.status)
+      case Settled(betId) =>
+        SettledState(state.status)
+      case Cancelled(betId, reason) =>
+        CancelledState(state.status)
+      case MarketValidationFailed(_, reason) =>
+        MarketValidationFailedState(state.status, reason)
+      case Failed(_, reason) =>
+        FailedState(state.status, reason)
+    }
 
   private def open(
       state: UninitializedState,
@@ -402,7 +413,7 @@ object Bet {
     // with gt
     logger.debug(
       s"checking marketStatus $marketStatus matches requested odds ${command.odds}")
-    marketStatus.result match {
+    command.result match {
       case 0 =>
         Match(
           marketStatus.odds.winHome >= command.odds,

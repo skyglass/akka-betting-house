@@ -42,7 +42,7 @@ class BetProjectionHandler(repository: BetRepository)
     }
   }
 
-  private def sendEvent(event: Bet.Opened): Future[Done] = {
+  /*private def sendEvent(event: Bet.Opened): Future[Done] = {
     //val topic = s"bet-result-${event.marketId}"
     val topic = "bet-result"
     log.debug(
@@ -73,5 +73,5 @@ class BetProjectionHandler(repository: BetRepository)
       event.stake,
       event.result)
     PbAny.pack(proto, topic).toByteArray
-  }
+  }*/
 }

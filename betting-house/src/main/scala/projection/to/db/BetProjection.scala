@@ -63,7 +63,7 @@ object BetProjection {
       sessionFactory = () => new ScalikeJdbcSession())(system)
   }
 
-  def createProducer(
+  /*def createProducer(
       system: ActorSystem[_]): SendProducer[String, Array[Byte]] = {
 
     val producerSettings =
@@ -78,5 +78,5 @@ object BetProjection {
       sendProducer.close()
     } //otherwise trying to restart the application you would probably get [WARN] [org.apache.kafka.common.utils.AppInfoParser] [] [betting-house-akka.kafka.default-dispatcher-X] - Error registering AppInfo mbean javax.management.InstanceAlreadyExistsException: kafka.producer:type=app-info,id=producer-
     sendProducer
-  }
+  }*/
 }
