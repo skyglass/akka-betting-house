@@ -8,33 +8,23 @@ import akka.management.scaladsl.AkkaManagement
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.SendProducer
-import org.apache.kafka.clients.admin.{
-  AdminClient,
-  AdminClientConfig,
-  NewTopic
-}
+import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig, NewTopic}
 import example.bet.grpc.BetServiceServer
 
 import scala.io.StdIn
 import example.bet.akka.http.WalletServiceServer
 import example.repository.scalike.BetRepositoryImpl
-import betting.house.projection.{
-  BetProjection,
-  BetProjectionServer,
-  MarketProjection
-}
+import betting.house.projection.{BetProjection, BetProjectionServer, MarketProjection}
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 
 import scala.util.control.NonFatal
 import example.repository.scalike.ScalikeJdbcSetup
-import org.apache.kafka.common.serialization.{
-  ByteArraySerializer,
-  StringSerializer
-}
+import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
+import projection.to.kafka.BetKafkaProcessor
 
 import java.util.Collections
 
@@ -61,6 +51,7 @@ object Main {
       val betRepository = new BetRepositoryImpl()
       val producer = createProducer(system)
       val adminClient = createKafkaAdminClient(system)
+      val config = producer.settings
       BetProjectionServer.init(betRepository)
       BetProjection.init(system, betRepository, producer)
       MarketProjection.init(system, producer)
@@ -111,6 +102,18 @@ object Main {
       admin.close()
       Future.successful(Done)
     }
+    admin
+  }
+
+  private def createKafkaConsumer(topic: String,
+                                      system: ActorSystem[_]): AdminClient = {
+
+    val producerSettings =
+      ProducerSettings( //they look up on creation at "akka.kafka.producer" in .conf
+        system,
+        new StringSerializer,
+        new ByteArraySerializer)
+    val consumer = BetKafkaProcessor(system)
     admin
   }
 

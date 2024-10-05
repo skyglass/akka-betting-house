@@ -1,4 +1,5 @@
 val AkkaVersion = "2.6.20"
+val AlpakkaKafkaVersion = "3.0.1"
 val LogbackVersion = "1.2.3"
 val ScalaVersion = "2.13.9"
 val AkkaManagementVersion = "1.1.4"
@@ -45,7 +46,8 @@ lazy val `betting-house` = project
         "org.scalikejdbc" %% "scalikejdbc"       % ScalikeJdbcVersion,
         "org.scalikejdbc" %% "scalikejdbc-config" % ScalikeJdbcVersion,
         "org.postgresql" % "postgresql" % "42.2.18",
-        "com.typesafe.akka" %% "akka-stream-kafka" % "2.1.1",
+        "com.typesafe.akka" %% "akka-stream-kafka" % AlpakkaKafkaVersion,
+        "com.typesafe.akka" %% "akka-stream-kafka-cluster-sharding" % AlpakkaKafkaVersion,
         "org.apache.kafka" % "kafka-clients" % "3.8.0",
         "com.lightbend.akka" %% "akka-projection-core" % AkkaProjectionVersion,
         "com.lightbend.akka" %% "akka-projection-eventsourced" % AkkaProjectionVersion,
