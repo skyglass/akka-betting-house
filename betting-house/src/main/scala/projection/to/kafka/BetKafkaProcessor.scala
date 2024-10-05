@@ -32,15 +32,15 @@ object BetKafkaProcessor {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   def apply(
-      shardRegion: ActorRef[Bet.Command],
-      processorSettings: BetKafkaProcessorSettings,
-      producer: SendProducer[String, Array[Byte]])
+             shardRegion: ActorRef[Bet.Command],
+             consumerSettings: BetResultConsumerSettings,
+             producer: SendProducer[String, Array[Byte]])
       : Behavior[Nothing] = {
     Behaviors
       .setup[Command] { ctx =>
         implicit val sys: TypedActorSystem[_] = ctx.system
         val result =
-          startConsumingFromTopic(shardRegion, processorSettings)
+          startConsumingFromTopic(shardRegion, consumerSettings)
 
         ctx.pipeToSelf(result) { result =>
           KafkaConsumerStopped(result)
@@ -56,9 +56,9 @@ object BetKafkaProcessor {
   }
 
   private def startConsumingFromTopic(
-      shardRegion: ActorRef[Bet.Command],
-      processorSettings: BetKafkaProcessorSettings,
-      producer: SendProducer[String, Array[Byte]])(
+                                       shardRegion: ActorRef[Bet.Command],
+                                       processorSettings: BetResultConsumerSettings,
+                                       producer: SendProducer[String, Array[Byte]])(
       implicit actorSystem: TypedActorSystem[_]): Future[Done] = {
 
     implicit val ec: ExecutionContext = actorSystem.executionContext

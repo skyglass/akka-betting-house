@@ -1,12 +1,13 @@
 package example.betting
 
 import akka.Done
-import akka.actor.CoordinatedShutdown
-import akka.actor.typed.ActorSystem
+import akka.actor.{Address, CoordinatedShutdown}
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.management.scaladsl.AkkaManagement
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akka.cluster.typed.Cluster
 
 import scala.concurrent.{ExecutionContext, Future}
 import akka.kafka.ProducerSettings
@@ -24,9 +25,9 @@ import org.slf4j.LoggerFactory
 import scala.util.control.NonFatal
 import example.repository.scalike.ScalikeJdbcSetup
 import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
-import projection.to.kafka.BetKafkaProcessor
+import projection.to.kafka.{BetKafkaProcessor, BetResultConsumer, BetResultConsumerSettings}
 
-import java.util.Collections
+import scala.collection.immutable.List
 
 object Main {
 
@@ -48,10 +49,18 @@ object Main {
       MarketServiceServer.init(system, sharding, ec)
       WalletServiceServer.init(system, sharding, ec)
 
+      val cluster = Cluster(system)
+      val address: Address = cluster.selfMember.address
+
+      // Use address to generate a unique transactional ID
+      val transactionalId = s"transactional-id-${address.host.getOrElse("unknown")}-${address.port.getOrElse(0)}"
+
       val betRepository = new BetRepositoryImpl()
       val producer = createProducer(system)
       val adminClient = createKafkaAdminClient(system)
-      val config = producer.settings
+      val producerSettings = producer.settings
+      val consumerSettings = BetResultConsumerSettings("akka.kafka.consumer", producerSettings, "test", system)
+      BetResultConsumer(sharding, consumerSettings, producer, transactionalId)
       BetProjectionServer.init(betRepository)
       BetProjection.init(system, betRepository, producer)
       MarketProjection.init(system, producer)
@@ -105,7 +114,7 @@ object Main {
     admin
   }
 
-  private def createKafkaConsumer(topic: String,
+  /*private def createKafkaConsumer(topic: String,
                                       system: ActorSystem[_]): AdminClient = {
 
     val producerSettings =
@@ -115,6 +124,6 @@ object Main {
         new ByteArraySerializer)
     val consumer = BetKafkaProcessor(system)
     admin
-  }
+  }*/
 
 }
