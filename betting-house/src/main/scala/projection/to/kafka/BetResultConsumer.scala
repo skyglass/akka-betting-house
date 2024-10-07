@@ -67,9 +67,7 @@ object BetResultConsumer {
               msg.record.value),
             msg.partitionOffset)
         }
-        .toMat(
-          Transactional.sink(producer.settings, transactionalId))(
-          Consumer.DrainingControl.apply)
+        .toMat(Sink.ignore)(Consumer.DrainingControl.apply)
         .run()
 
     val future = drainingControl.drainAndShutdown

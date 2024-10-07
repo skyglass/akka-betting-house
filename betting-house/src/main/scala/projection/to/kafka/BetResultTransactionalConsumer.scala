@@ -3,19 +3,21 @@ package projection.to.kafka
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.kafka.scaladsl.Consumer.Control
-import akka.kafka.scaladsl.{SendProducer, Transactional}
-import akka.kafka.{ProducerMessage, Subscriptions}
+import akka.kafka.scaladsl.Consumer.{ Control, DrainingControl }
+import akka.kafka.scaladsl.{ Consumer, SendProducer, Transactional }
+import akka.kafka.{ ProducerMessage, Subscriptions }
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, RestartSource, Sink}
+import akka.stream.scaladsl.{ Flow, Keep, RestartSource, Sink }
 import example.bet.grpc.BetService
+import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
+import projection.to.kafka.BetResultConsumer.log
 
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 object BetResultTransactionalConsumer {
 
@@ -24,6 +26,7 @@ object BetResultTransactionalConsumer {
   def init(
       implicit consumerSettings: BetResultConsumerSettings,
       producer: SendProducer[String, Array[Byte]],
+      adminClient: AdminClient,
       transactionalId: String,
       betService: BetService,
       system: ActorSystem[Nothing],
@@ -41,35 +44,48 @@ object BetResultTransactionalConsumer {
           Subscriptions.topics(consumerSettings.topic))
         .via(business)
         .map { msg =>
-          ProducerMessage.Message(
+          log.warn(s"Got message - ${msg.record.value()}")
+        /*ProducerMessage.Message(
             new ProducerRecord[String, Array[Byte]](
               "sink-topic",
               msg.record.value),
-            msg.partitionOffset)
+            msg.partitionOffset)*/
         }
-        // side effect out the `Control` materialized value because it can't be propagated through the `RestartSource`
         .mapMaterializedValue(innerControl = _)
-        .via(Transactional.flow(producer.settings, transactionalId))
     }
 
     stream.runWith(Sink.ignore)
 
     // Add shutdown hook to respond to SIGTERM and gracefully shutdown stream
-    sys.ShutdownHookThread {
+    /*sys.ShutdownHookThread {
       Await.result(innerControl.shutdown(), 10.seconds)
     }
-    // #transactionalFailureRetry
+    // #transactionalFailureRetry */
 
-    terminateWhenDone(system, ec, innerControl.shutdown())
+    terminateWhenDone(
+      system,
+      ec,
+      adminClient,
+      consumerSettings,
+      innerControl.shutdown())
   }
 
   def business[T] = Flow[T]
 
-  def terminateWhenDone(implicit system: ActorSystem[Nothing], ec: ExecutionContext, result: Future[Done]): Unit =
+  def terminateWhenDone(
+      implicit system: ActorSystem[Nothing],
+      ec: ExecutionContext,
+      adminClient: AdminClient,
+      consumerSettings: BetResultConsumerSettings,
+      result: Future[Done]): Unit =
     result.onComplete {
       case Failure(e) =>
-        system.log.error(e.getMessage)
-        system.terminate()
-      case Success(_) => system.terminate()
+        log.error(e.getMessage)
+        adminClient.deleteTopics(
+          java.util.Arrays.asList(consumerSettings.topic))
+      case Success(_) =>
+        log.warn("consumed all messages")
+        adminClient.deleteTopics(
+          java.util.Arrays.asList(consumerSettings.topic))
     }
 }

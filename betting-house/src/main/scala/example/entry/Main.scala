@@ -75,7 +75,7 @@ object Main {
 
       val betRepository = new BetRepositoryImpl()
       val producer = createProducer(system)
-      //val adminClient = createKafkaAdminClient(system)
+      val adminClient = createKafkaAdminClient(system)
       val producerSettings = producer.settings
       val consumerSettings = BetResultConsumerSettings(
         producerSettings,
@@ -86,9 +86,10 @@ object Main {
       BetProjection.init(system, betRepository, producer)
       MarketProjection.init(system, producer)
       log.warn("prepare consumer")
-      BetResultConsumer.init(
+      BetResultTransactionalConsumer.init(
         consumerSettings,
         producer,
+        adminClient,
         transactionalId,
         betService,
         system,
@@ -131,10 +132,10 @@ object Main {
     val config = new java.util.Properties
     config.putAll(producerSettings.getProperties)
     val admin = AdminClient.create(config)
-    val newTopic1 = new NewTopic("test1", 3, 3: Short)
-    val newTopic2 = new NewTopic("test2", 3, 3: Short)
+    //val newTopic1 = new NewTopic("test1", 3, 3: Short)
+    //val newTopic2 = new NewTopic("test2", 3, 3: Short)
     //admin.createTopics(java.util.Arrays.asList(newTopic1, newTopic2))
-    admin.deleteTopics(java.util.Arrays.asList(newTopic1.name()))
+    //admin.deleteTopics(java.util.Arrays.asList(newTopic1.name()))
     CoordinatedShutdown(system).addTask(
       CoordinatedShutdown.PhaseBeforeActorSystemTerminate,
       "closing kafka admin client") { () =>
