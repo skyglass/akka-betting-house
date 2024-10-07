@@ -2,26 +2,27 @@ package projection.to.kafka
 
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
-import akka.kafka.{ConsumerSettings, ProducerSettings}
+import akka.kafka.{ ConsumerSettings, ProducerSettings }
 import akka.util.Timeout
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.{ByteArrayDeserializer, StringDeserializer}
+import org.apache.kafka.common.serialization.{
+  ByteArrayDeserializer,
+  StringDeserializer
+}
 
 import scala.concurrent.duration._
 import example.betting.Bet
 
 case object BetResultConsumerSettings {
   def apply(
-      configLocation: String,
       producerSettings: ProducerSettings[String, Array[Byte]],
       topic: String,
+      groupId: String,
       system: ActorSystem[Nothing]): BetResultConsumerSettings = {
-    val config = system.settings.config.getConfig(configLocation)
     new BetResultConsumerSettings(
       producerSettings.getProperty("bootstrap.servers"),
       topic,
-      config.getString("group-id"),
-      Timeout.create(config.getDuration("ask-timeout")),
+      groupId,
       system: ActorSystem[Nothing])
   }
 }
@@ -30,7 +31,6 @@ final class BetResultConsumerSettings(
     val bootstrapServers: String,
     val topic: String,
     val groupId: String,
-    val askTimeout: Timeout,
     val system: ActorSystem[Nothing]) {
   def kafkaConsumerSettings()
       : ConsumerSettings[String, Array[Byte]] = {

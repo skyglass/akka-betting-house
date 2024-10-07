@@ -45,7 +45,8 @@ class BetProjectionHandler(
   }
 
   private def sendEvent(event: Bet.Opened): Future[Done] = {
-    val topic = s"bet-result-${event.marketId}"
+    //val topic = s"bet-result-${event.marketId}"
+    val topic = "bet-result"
     log.debug(
       s"sending bet result event [$event] to topic [${topic}]}")
 

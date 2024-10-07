@@ -15,7 +15,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
 
-class BetServiceImplSharding(implicit sharding: ClusterSharding)
+class BetServiceImplSharding(sharding: ClusterSharding)
     extends BetService {
 
   implicit val timeout: Timeout = 6.seconds

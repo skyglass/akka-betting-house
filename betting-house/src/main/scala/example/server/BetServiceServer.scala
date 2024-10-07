@@ -10,11 +10,10 @@ object BetServiceServer {
 
   def init(
       implicit system: ActorSystem[_],
-      sharding: ClusterSharding,
-      ec: ExecutionContext): Future[Http.ServerBinding] = {
+      betServiceImplSharding: BetServiceImplSharding)
+      : Future[Http.ServerBinding] = {
     val betService: HttpRequest => Future[HttpResponse] =
-      BetServiceHandler.withServerReflection(
-        new BetServiceImplSharding())
+      BetServiceHandler.withServerReflection(betServiceImplSharding)
 
     val port = system.settings.config.getInt("services.bet.port")
     val host = system.settings.config.getString("services.host")
