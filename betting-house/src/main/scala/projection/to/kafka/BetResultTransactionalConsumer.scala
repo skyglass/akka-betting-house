@@ -2,37 +2,48 @@ package projection.to.kafka
 
 import akka.Done
 import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.kafka.scaladsl.Consumer.{ Control, DrainingControl }
 import akka.kafka.scaladsl.{ Consumer, SendProducer, Transactional }
 import akka.kafka.{ ProducerMessage, Subscriptions }
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{ Flow, Keep, RestartSource, Sink }
-import example.bet.grpc.BetService
+import example.bet.grpc.{ BetService, SettleMessage }
+import example.betting.{ Bet, Market }
+import example.betting.Bet.Command
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
-import projection.to.kafka.BetResultConsumer.log
 
+import java.util.stream.Collectors
 import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
-object BetResultTransactionalConsumer {
+class BetResultTransactionalConsumer(
+    implicit producer: SendProducer[String, Array[Byte]],
+    adminClient: AdminClient,
+    sharding: ClusterSharding,
+    system: ActorSystem[Nothing],
+    ec: ExecutionContext) {
 
-  val log = LoggerFactory.getLogger(this.getClass)
+  def getProducer: SendProducer[String, Array[Byte]] = producer
+  def getAdminClient: AdminClient = adminClient
+  def getSharding: ClusterSharding = sharding
+  def getSystem: ActorSystem[Nothing] = system
+  def getEc: ExecutionContext = ec
 
-  def init(
-      implicit consumerSettings: BetResultConsumerSettings,
-      producer: SendProducer[String, Array[Byte]],
-      adminClient: AdminClient,
-      transactionalId: String,
-      betService: BetService,
-      system: ActorSystem[Nothing],
-      ec: ExecutionContext) = {
+  val log =
+    LoggerFactory.getLogger(classOf[BetResultTransactionalConsumer])
+
+  def init(marketId: String, marketResult: Int): Unit = {
     // #transactionalFailureRetry
-    var innerControl: Control = null
+    val topic = s"bet-result-${marketId}"
+    val groupId = topic
+    val consumerSettings =
+      BetResultConsumerSettings(producer.settings, groupId, system)
 
     val stream = RestartSource.onFailuresWithBackoff(
       minBackoff = 1.seconds,
@@ -41,51 +52,33 @@ object BetResultTransactionalConsumer {
       Transactional
         .source(
           consumerSettings.kafkaConsumerSettings(),
-          Subscriptions.topics(consumerSettings.topic))
-        .via(business)
+          Subscriptions.topics(topic))
         .map { msg =>
           log.warn(s"Got message - ${msg.record.value()}")
-        /*ProducerMessage.Message(
-            new ProducerRecord[String, Array[Byte]](
-              "sink-topic",
-              msg.record.value),
-            msg.partitionOffset)*/
+          val betProto =
+            example.bet.grpc.Bet.parseFrom(msg.record.value)
+          Bet
+            .requestBetSettlement(
+              betProto.betId,
+              marketResult,
+              sharding)
+            .map { response =>
+              response match {
+                case Bet.Accepted =>
+                  log.warn(s"stake settled [$betProto]")
+                case Bet.RequestUnaccepted(reason) =>
+                  val message =
+                    s"stake not settled [$betProto]. Reason [${reason}]"
+                  log.error(message)
+              }
+            }
+          log.warn(
+            s"Settle message: betId - ${betProto.betId}, marketResult - ${marketResult}")
         }
-        .mapMaterializedValue(innerControl = _)
     }
 
     stream.runWith(Sink.ignore)
 
-    // Add shutdown hook to respond to SIGTERM and gracefully shutdown stream
-    /*sys.ShutdownHookThread {
-      Await.result(innerControl.shutdown(), 10.seconds)
-    }
-    // #transactionalFailureRetry */
-
-    terminateWhenDone(
-      system,
-      ec,
-      adminClient,
-      consumerSettings,
-      innerControl.shutdown())
   }
 
-  def business[T] = Flow[T]
-
-  def terminateWhenDone(
-      implicit system: ActorSystem[Nothing],
-      ec: ExecutionContext,
-      adminClient: AdminClient,
-      consumerSettings: BetResultConsumerSettings,
-      result: Future[Done]): Unit =
-    result.onComplete {
-      case Failure(e) =>
-        log.error(e.getMessage)
-        adminClient.deleteTopics(
-          java.util.Arrays.asList(consumerSettings.topic))
-      case Success(_) =>
-        log.warn("consumed all messages")
-        adminClient.deleteTopics(
-          java.util.Arrays.asList(consumerSettings.topic))
-    }
 }

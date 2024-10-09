@@ -38,8 +38,8 @@ import org.apache.kafka.common.serialization.{
 }
 import projection.to.kafka
 import projection.to.kafka.{
-  BetResultConsumer,
   BetResultConsumerSettings,
+  BetResultKafkaService,
   BetResultTransactionalConsumer
 }
 
@@ -61,37 +61,23 @@ object Main {
       ClusterBootstrap(system).start()
       ScalikeJdbcSetup.init(system)
 
-      val betService = new BetServiceImplSharding(sharding);
-      BetServiceServer.init(system, betService)
+      BetServiceServer.init(system, sharding)
       MarketServiceServer.init(system, sharding, ec)
       WalletServiceServer.init(system, sharding, ec)
 
       val cluster = Cluster(system)
-      val address: Address = cluster.selfMember.address
-
-      // Use address to generate a unique transactional ID
-      val transactionalId = s"transactional-id-${address.host
-        .getOrElse("unknown")}-${address.port.getOrElse(0)}"
 
       val betRepository = new BetRepositoryImpl()
       val producer = createProducer(system)
       val adminClient = createKafkaAdminClient(system)
-      val producerSettings = producer.settings
-      val consumerSettings = BetResultConsumerSettings(
-        producerSettings,
-        "bet-result",
-        "bet-result-consumer",
-        system)
       BetProjectionServer.init(betRepository)
       BetProjection.init(system, betRepository, producer)
       MarketProjection.init(system, producer)
       log.warn("prepare consumer")
-      BetResultTransactionalConsumer.init(
-        consumerSettings,
+      BetResultKafkaService.init(
         producer,
         adminClient,
-        transactionalId,
-        betService,
+        sharding,
         system,
         ec)
       log.warn("prepared consumer")

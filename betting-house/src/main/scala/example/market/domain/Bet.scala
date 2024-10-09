@@ -10,7 +10,6 @@ import akka.cluster.sharding.typed.scaladsl.{
   ClusterSharding,
   EntityTypeKey
 }
-
 import akka.persistence.typed.scaladsl.{
   Effect,
   EventSourcedBehavior,
@@ -23,12 +22,20 @@ import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
+import projection.to.kafka.BetResultKafkaService
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 object Bet {
 
   val logger = LoggerFactory.getLogger(Bet.getClass())
 
   val typeKey = EntityTypeKey[Command]("bet")
+
+  implicit val timeout: Timeout = 6.seconds
+
+  implicit val executionContext: ExecutionContext =
+    ExecutionContext.global
 
   sealed trait Command extends CborSerializable
   trait ReplyCommand extends Command {
@@ -53,7 +60,7 @@ object Bet {
       available: Boolean,
       marketOdds: Option[Double])
       extends Command
-  private final case class WalletFundsReservationGranted(
+  private final case class WalletFundsReservationStarted(
       response: Wallet.UpdatedResponse)
       extends Command
 
@@ -160,7 +167,7 @@ object Bet {
         open(state, command, sharding, context, timer)
       case (
           state: MarketValidationFailedState,
-          command: WalletFundsReservationGranted) =>
+          command: WalletFundsReservationStarted) =>
         requestWalletRefund(state, sharding, context)
       case (state: MarketValidationFailedState, _) =>
         marketValidationFailed(state)
@@ -168,7 +175,7 @@ object Bet {
         validateMarket(state, command, sharding, context)
       case (
           state: OpenState,
-          command: WalletFundsReservationGranted) =>
+          command: WalletFundsReservationStarted) =>
         validateFunds(state, command)
       case (state: OpenState, command: ValidationsTimedOut) =>
         checkValidations(state, sharding, context)
@@ -260,6 +267,7 @@ object Bet {
         requestMarketStatus(command, sharding, context))
       .thenRun((_: State) =>
         requestFundsReservation(command, sharding, context))
+      .thenRun((_: State) => BetResultKafkaService.sendEvent(open))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
@@ -281,7 +289,7 @@ object Bet {
 
   private def validateFunds(
       state: OpenState,
-      command: WalletFundsReservationGranted)
+      command: WalletFundsReservationStarted)
       : Effect[Event, State] = {
     command.response match {
       case Wallet.Accepted =>
@@ -329,11 +337,25 @@ object Bet {
       sharding.entityRefFor(Wallet.typeKey, command.walletId)
     val walletResponseMapper: ActorRef[Wallet.UpdatedResponse] =
       context.messageAdapter(rsp =>
-        WalletFundsReservationGranted(rsp))
+        WalletFundsReservationStarted(rsp))
 
     walletRef ! Wallet.ReserveFunds(
       command.stake,
       walletResponseMapper)
+  }
+
+  def requestBetSettlement(
+      betId: String,
+      result: Int,
+      sharding: ClusterSharding): Future[Bet.Response] = {
+
+    def auxSettle(result: Int)(
+        replyTo: ActorRef[Bet.Response]): Bet.Settle =
+      Bet.Settle(result, replyTo)
+
+    val betRef = sharding.entityRefFor(Bet.typeKey, betId)
+
+    betRef.ask(auxSettle(result)).mapTo[Bet.Response]
   }
 
   private def marketValidationFailed(

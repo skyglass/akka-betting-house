@@ -16,12 +16,10 @@ import example.betting.Bet
 case object BetResultConsumerSettings {
   def apply(
       producerSettings: ProducerSettings[String, Array[Byte]],
-      topic: String,
       groupId: String,
       system: ActorSystem[Nothing]): BetResultConsumerSettings = {
     new BetResultConsumerSettings(
       producerSettings.getProperty("bootstrap.servers"),
-      topic,
       groupId,
       system: ActorSystem[Nothing])
   }
@@ -29,7 +27,6 @@ case object BetResultConsumerSettings {
 
 final class BetResultConsumerSettings(
     val bootstrapServers: String,
-    val topic: String,
     val groupId: String,
     val system: ActorSystem[Nothing]) {
   def kafkaConsumerSettings()

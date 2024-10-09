@@ -1,8 +1,11 @@
 package example.betting
 
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
-
+import akka.cluster.sharding.typed.scaladsl.{
+  ClusterSharding,
+  EntityTypeKey
+}
 import akka.persistence.typed.scaladsl.{
   Effect,
   EventSourcedBehavior,
@@ -10,6 +13,8 @@ import akka.persistence.typed.scaladsl.{
   RetentionCriteria
 }
 import akka.persistence.typed.PersistenceId
+import example.betting.Bet.{ handleCommands, Command, State }
+import projection.to.kafka.BetResultKafkaService
 
 import scala.concurrent.duration._
 import java.time.{ OffsetDateTime, ZoneId }
@@ -56,6 +61,11 @@ object Market {
   final case class GetState(replyTo: ActorRef[Response])
       extends Command
 
+  final case class MarketSettlementStarted(
+      response: Market.Response,
+      replyTo: ActorRef[Response])
+      extends Command
+
   sealed trait Response extends CborSerializable
   final case object Accepted extends Response
   final case class CurrentState(status: Status) extends Response
@@ -81,25 +91,30 @@ object Market {
   final case class CancelledState(status: Status) extends State
 
   def apply(marketId: String): Behavior[Command] =
-    EventSourcedBehavior[Command, Event, State](
-      PersistenceId(typeKey.name, marketId),
-      UninitializedState(Status.empty(marketId)),
-      commandHandler = handleCommands,
-      eventHandler = handleEvents)
-      .withTagger {
-        case _ => Set(calculateTag(marketId, tags))
+    Behaviors
+      .setup[Command] { context =>
+        EventSourcedBehavior[Command, Event, State](
+          PersistenceId(typeKey.name, marketId),
+          UninitializedState(Status.empty(marketId)),
+          commandHandler = (state, command) =>
+            handleCommands(state, command, context),
+          eventHandler = handleEvents)
+          .withTagger {
+            case _ => Set(calculateTag(marketId, tags))
+          }
+          .withRetention(RetentionCriteria
+            .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 2))
+          .onPersistFailure(
+            SupervisorStrategy.restartWithBackoff(
+              minBackoff = 10.seconds,
+              maxBackoff = 60.seconds,
+              randomFactor = 0.1))
       }
-      .withRetention(RetentionCriteria
-        .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 2))
-      .onPersistFailure(
-        SupervisorStrategy.restartWithBackoff(
-          minBackoff = 10.seconds,
-          maxBackoff = 60.seconds,
-          randomFactor = 0.1))
 
   private def handleCommands(
       state: State,
-      command: Command): ReplyEffect[Event, State] =
+      command: Command,
+      context: ActorContext[Command]): ReplyEffect[Event, State] =
     (state, command) match {
       case (state: UninitializedState, command: Open) =>
         open(state, command)
@@ -163,6 +178,9 @@ object Market {
         command.opensAt)
     Effect
       .persist(opened)
+      .thenRun((_: State) =>
+        BetResultKafkaService
+          .createConsumer(state.status.marketId, 2))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
