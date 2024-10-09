@@ -42,7 +42,7 @@ public class BetE2eTest extends E2eTest {
         String walletId = UUID.randomUUID().toString();
         int walletBalance = 100;
         String marketId = UUID.randomUUID().toString();
-        int betStake = 50;
+        int betStake = 100;
         double betOdds = 2.8;
         MarketData.Result betResult = MarketData.Result.TIE;
 
@@ -69,24 +69,24 @@ public class BetE2eTest extends E2eTest {
                 Duration.ofSeconds(10)
                 , () -> {
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
-                    while (walletData.getAmount() != 50) {
+                    while (walletData.getAmount() != 0) {
                         walletData = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(walletData.getAmount(), equalTo(50));
+                    assertThat(walletData.getAmount(), equalTo(0));
                 }, () -> "Wallet amount is not reduced to 50; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
         );
 
-        customerTestHelper.removeFunds(walletId, 50);
-        customerTestHelper.addFunds(walletId, 30);
+        //customerTestHelper.removeFunds(walletId, 50);
+        //customerTestHelper.addFunds(walletId, 30);
 
         assertTimeoutPreemptively(
                 Duration.ofSeconds(10)
                 , () -> {
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
-                    while (walletData.getAmount() != 30) {
+                    while (walletData.getAmount() != 100) {
                         walletData = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(walletData.getAmount(), equalTo(30));
+                    assertThat(walletData.getAmount(), equalTo(100));
                 }, () -> "Wallet amount is not reduced to thirty; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
         );
     }

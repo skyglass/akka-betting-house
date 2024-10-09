@@ -3,7 +3,10 @@ package projection.to.kafka
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.ActorContext
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akka.cluster.sharding.typed.scaladsl.{
+  ClusterSharding,
+  Entity
+}
 import akka.kafka.ConsumerMessage.TransactionalMessage
 import akka.kafka.{ ProducerMessage, ProducerSettings, Subscriptions }
 import akka.kafka.scaladsl.{ Consumer, SendProducer, Transactional }
@@ -17,7 +20,6 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.HashMap
 import scala.concurrent.{ ExecutionContext, Future }
-import com.google.protobuf.any.{ Any => PbAny }
 
 object BetResultKafkaService {
   val log = LoggerFactory.getLogger(this.getClass)
@@ -31,6 +33,8 @@ object BetResultKafkaService {
       sharding: ClusterSharding,
       system: ActorSystem[Nothing],
       ec: ExecutionContext): Unit = {
+    sharding.init(Entity(Bet.typeKey)(entityContext =>
+      Bet(entityContext.entityId)))
     val prototype = new BetResultTransactionalConsumer()
     BetResultKafkaService.consumers.put(PROTOTYPE_KEY, prototype)
   }
@@ -63,7 +67,7 @@ object BetResultKafkaService {
     log.debug(
       s"sending bet result event [$event] to topic [${topic}]}")
 
-    val serializedEvent = serialize(event, topic)
+    val serializedEvent = serialize(event)
     if (!serializedEvent.isEmpty) {
       val record =
         new ProducerRecord(topic, event.betId, serializedEvent)
@@ -77,9 +81,7 @@ object BetResultKafkaService {
     }
   }
 
-  private def serialize(
-      event: Bet.Opened,
-      topic: String): Array[Byte] = {
+  private def serialize(event: Bet.Opened): Array[Byte] = {
     val proto = example.bet.grpc.Bet(
       event.betId,
       event.walletId,
@@ -87,6 +89,6 @@ object BetResultKafkaService {
       event.odds,
       event.stake,
       event.result)
-    PbAny.pack(proto, topic).toByteArray
+    proto.toByteArray
   }
 }

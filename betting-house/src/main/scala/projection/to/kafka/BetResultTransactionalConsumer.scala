@@ -54,7 +54,7 @@ class BetResultTransactionalConsumer(
           consumerSettings.kafkaConsumerSettings(),
           Subscriptions.topics(topic))
         .map { msg =>
-          log.warn(s"Got message - ${msg.record.value()}")
+          log.warn(s"Got message - ${msg.record.value}")
           val betProto =
             example.bet.grpc.Bet.parseFrom(msg.record.value)
           Bet
@@ -65,10 +65,10 @@ class BetResultTransactionalConsumer(
             .map { response =>
               response match {
                 case Bet.Accepted =>
-                  log.warn(s"stake settled [$betProto]")
+                  log.warn(s"stake settled [${betProto.betId}]")
                 case Bet.RequestUnaccepted(reason) =>
                   val message =
-                    s"stake not settled [$betProto]. Reason [${reason}]"
+                    s"stake not settled [${betProto.betId}]. Reason [${reason}]"
                   log.error(message)
               }
             }
