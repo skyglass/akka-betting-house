@@ -10,10 +10,15 @@ import akka.cluster.sharding.typed.scaladsl.{
 import akka.kafka.ConsumerMessage.TransactionalMessage
 import akka.kafka.{ ProducerMessage, ProducerSettings, Subscriptions }
 import akka.kafka.scaladsl.{ Consumer, SendProducer, Transactional }
+import akka.stream.UniqueKillSwitch
 import akka.stream.scaladsl.Sink
 import example.bet.grpc.BetService
 import example.betting.{ Bet, Market }
-import example.betting.Bet.Command
+import example.betting.Bet.{
+  Command,
+  OpenState,
+  ValidationsPassedState
+}
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
@@ -24,8 +29,12 @@ import scala.concurrent.{ ExecutionContext, Future }
 object BetResultKafkaService {
   val log = LoggerFactory.getLogger(this.getClass)
   val PROTOTYPE_KEY = "prototype-key"
-  val consumers =
+
+  private val consumers =
     new HashMap[String, BetResultTransactionalConsumer]()
+
+  private val killSwitches =
+    new HashMap[String, UniqueKillSwitch]()
 
   def init(
       implicit producer: SendProducer[String, Array[Byte]],
@@ -47,32 +56,44 @@ object BetResultKafkaService {
     implicit val system = prototype.getSystem
     implicit val ec = prototype.getEc
     val consumer = new BetResultTransactionalConsumer()
-    consumer.init(marketId, marketResult)
-    consumers.put(marketId, consumer)
+    val killSwitch = consumer.init(marketId, marketResult)
+    addConsumer(marketId, consumer, killSwitch)
   }
 
-  def deleteConsumer(marketId: String): Unit = {
+  private def addConsumer(
+      marketId: String,
+      consumer: BetResultTransactionalConsumer,
+      killSwitch: UniqueKillSwitch): Unit = {
+    consumers.put(marketId, consumer)
+    killSwitches.put(marketId, killSwitch)
+  }
+
+  def shutdownConsumer(marketId: String): Unit = {
+    val killSwitch = killSwitches.get(marketId).get
+    killSwitch.shutdown()
     consumers.remove(marketId)
+    killSwitches.remove(marketId)
   }
 
   private def getPrototype(): BetResultTransactionalConsumer = {
     consumers.get(PROTOTYPE_KEY).get
   }
 
-  def sendEvent(event: Bet.Opened): Future[Done] = {
+  def sendEvent(state: ValidationsPassedState): Future[Done] = {
     val prototype = getPrototype()
     implicit val producer = prototype.getProducer
     implicit val ec = prototype.getEc
-    val topic = s"bet-result-${event.marketId}"
+    val topic = s"bet-result-${state.status.marketId}"
     log.debug(
-      s"sending bet result event [$event] to topic [${topic}]}")
+      s"sending bet result event with betId [${state.status.betId}] to topic [${topic}]}")
 
-    val serializedEvent = serialize(event)
+    val serializedEvent = serialize(state.status.betId, state)
     if (!serializedEvent.isEmpty) {
       val record =
-        new ProducerRecord(topic, event.betId, serializedEvent)
+        new ProducerRecord(topic, state.status.betId, serializedEvent)
       producer.send(record).map { _ =>
-        log.debug(s"published event [$event] to topic [$topic]}")
+        log.debug(
+          s"published event with betId [${state.status.betId}] to topic [$topic]}")
         Done
       }
       Future.successful(Done)
@@ -81,14 +102,42 @@ object BetResultKafkaService {
     }
   }
 
-  private def serialize(event: Bet.Opened): Array[Byte] = {
+  def sendAllMessagesConsumedPoisonPill(
+      poisonPillId: String,
+      state: ValidationsPassedState): Future[Done] = {
+    val prototype = getPrototype()
+    implicit val producer = prototype.getProducer
+    implicit val ec = prototype.getEc
+    val topic = s"bet-result-${state.status.marketId}"
+    log.debug(
+      s"sending poison pill message telling that all messages consumed for topic [${topic}]}")
+
+    val serializedEvent = serialize(poisonPillId, state)
+    if (!serializedEvent.isEmpty) {
+      val record =
+        new ProducerRecord(topic, poisonPillId, serializedEvent)
+      producer.send(record).map { _ =>
+        log.debug(
+          s"published poison pill event with poisonPillId [${poisonPillId}] to topic [$topic]}")
+        Done
+      }
+      Future.successful(Done)
+    } else {
+      Future.successful(Done)
+    }
+  }
+
+  private def serialize(
+      betId: String,
+      state: Bet.ValidationsPassedState): Array[Byte] = {
     val proto = example.bet.grpc.Bet(
-      event.betId,
-      event.walletId,
-      event.marketId,
-      event.odds,
-      event.stake,
-      event.result)
+      betId,
+      state.status.walletId,
+      state.status.marketId,
+      state.status.odds,
+      state.status.stake,
+      state.status.result)
     proto.toByteArray
   }
+
 }

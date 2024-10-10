@@ -17,16 +17,24 @@ import akka.persistence.typed.scaladsl.{
   RetentionCriteria
 }
 import akka.persistence.typed.PersistenceId
+import akka.stream.UniqueKillSwitch
 
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import akka.util.Timeout
+import example.betting.Market.State
+import org.apache.kafka.clients.admin.{
+  AdminClient,
+  DeleteConsumerGroupsOptions
+}
 import org.slf4j.LoggerFactory
 import projection.to.kafka.BetResultKafkaService
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 object Bet {
+
+  val ALL_MESSAGES_CONSUMED_ID = "all-messages-consumed-id"
 
   val logger = LoggerFactory.getLogger(Bet.getClass())
 
@@ -56,11 +64,14 @@ object Bet {
       extends ReplyCommand
   final case class GetState(replyTo: ActorRef[Response])
       extends ReplyCommand
+
+  private final case class HandleValidationsPassed(betId: String)
+      extends Command
   private final case class MarketOddsAvailable(
       available: Boolean,
       marketOdds: Option[Double])
       extends Command
-  private final case class WalletFundsReservationStarted(
+  private final case class WalletFundsReservationResponded(
       response: Wallet.UpdatedResponse)
       extends Command
 
@@ -76,6 +87,8 @@ object Bet {
 
   sealed trait Response extends CborSerializable
   final case object Accepted extends Response
+
+  final case object AllBetsSettled extends Response
   final case class RequestUnaccepted(reason: String) extends Response
   final case class CurrentState(state: State) extends Response
 
@@ -109,6 +122,9 @@ object Bet {
         status
       ) // the ask user when market no longer available
   final case class SettledState(override val status: Status)
+      extends State(status)
+
+  final case class ValidationsPassedState(override val status: Status)
       extends State(status)
   final case class CancelledState(override val status: Status)
       extends State(status)
@@ -167,21 +183,25 @@ object Bet {
         open(state, command, sharding, context, timer)
       case (
           state: MarketValidationFailedState,
-          command: WalletFundsReservationStarted) =>
-        requestWalletRefund(state, sharding, context)
+          command: WalletFundsReservationResponded) =>
+        requestWalletRefund(state, command, sharding, context)
       case (state: MarketValidationFailedState, _) =>
         marketValidationFailed(state)
       case (state: OpenState, command: MarketOddsAvailable) =>
         validateMarket(state, command, sharding, context)
       case (
           state: OpenState,
-          command: WalletFundsReservationStarted) =>
-        validateFunds(state, command)
+          command: WalletFundsReservationResponded) =>
+        validateFunds(state, command, sharding, context)
       case (state: OpenState, command: ValidationsTimedOut) =>
-        checkValidations(state, sharding, context)
-      case (state: OpenState, command: Settle) =>
+        checkValidationsAfterTimeout(state, sharding, context)
+      case (
+          state: ValidationsPassedState,
+          command: HandleValidationsPassed) =>
+        validationsPassed(state)
+      case (state: ValidationsPassedState, command: Settle) =>
         settle(state, command, sharding, context)
-      case (state: OpenState, command: Close) =>
+      case (state: ValidationsPassedState, command: Close) =>
         finish(state, command)
       case (state: State, command: GetState) =>
         getState(state, command.replyTo)
@@ -231,7 +251,7 @@ object Bet {
       case FundsGranted(betId, state) =>
         state.copy(fundsConfirmed = Some(true))
       case ValidationsPassed(betId, state) =>
-        state
+        ValidationsPassedState(state.status)
       case Closed(betId) =>
         ClosedState(state.status)
       case Settled(betId) =>
@@ -267,7 +287,6 @@ object Bet {
         requestMarketStatus(command, sharding, context))
       .thenRun((_: State) =>
         requestFundsReservation(command, sharding, context))
-      .thenRun((_: State) => BetResultKafkaService.sendEvent(open))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
@@ -277,6 +296,9 @@ object Bet {
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
     if (command.available) {
+      if (state.fundsConfirmed.getOrElse(false)) {
+        requestValidationsPassed(state, sharding)
+      }
       Effect.persist(MarketConfirmed(state.status.betId, state))
     } else {
       marketValidationFailed(
@@ -289,10 +311,14 @@ object Bet {
 
   private def validateFunds(
       state: OpenState,
-      command: WalletFundsReservationStarted)
-      : Effect[Event, State] = {
+      command: WalletFundsReservationResponded,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
     command.response match {
       case Wallet.Accepted =>
+        if (state.marketConfirmed.getOrElse(false)) {
+          requestValidationsPassed(state, sharding)
+        }
         Effect.persist(FundsGranted(state.status.betId, state))
       case Wallet.Rejected =>
         Effect.persist(
@@ -337,7 +363,7 @@ object Bet {
       sharding.entityRefFor(Wallet.typeKey, command.walletId)
     val walletResponseMapper: ActorRef[Wallet.UpdatedResponse] =
       context.messageAdapter(rsp =>
-        WalletFundsReservationStarted(rsp))
+        WalletFundsReservationResponded(rsp))
 
     walletRef ! Wallet.ReserveFunds(
       command.stake,
@@ -346,16 +372,28 @@ object Bet {
 
   def requestBetSettlement(
       betId: String,
+      marketId: String,
       result: Int,
-      sharding: ClusterSharding): Future[Bet.Response] = {
+      sharding: ClusterSharding,
+      adminClient: AdminClient,
+      topic: String,
+      groupId: String): Future[Bet.Response] = {
 
-    def auxSettle(result: Int)(
-        replyTo: ActorRef[Bet.Response]): Bet.Settle =
-      Bet.Settle(result, replyTo)
+    if (ALL_MESSAGES_CONSUMED_ID.equals(betId)) {
+      BetResultKafkaService.shutdownConsumer(marketId)
+      adminClient.deleteConsumerGroups(
+        java.util.Arrays.asList(groupId))
+      adminClient.deleteTopics(java.util.Arrays.asList(topic))
+      Future.successful(AllBetsSettled)
+    } else {
+      def auxSettle(result: Int)(
+          replyTo: ActorRef[Bet.Response]): Bet.Settle =
+        Bet.Settle(result, replyTo)
 
-    val betRef = sharding.entityRefFor(Bet.typeKey, betId)
+      val betRef = sharding.entityRefFor(Bet.typeKey, betId)
 
-    betRef.ask(auxSettle(result)).mapTo[Bet.Response]
+      betRef.ask(auxSettle(result)).mapTo[Bet.Response]
+    }
   }
 
   private def marketValidationFailed(
@@ -383,6 +421,18 @@ object Bet {
 
   private def requestWalletRefund(
       state: State,
+      command: WalletFundsReservationResponded,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
+    command.response match {
+      case Wallet.Accepted =>
+        requestWalletRefund(state, sharding, context)
+    }
+    Effect.none
+  }
+
+  private def requestWalletRefund(
+      state: State,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
     val reason =
@@ -399,13 +449,13 @@ object Bet {
     Effect.none
   }
 
-  private def checkValidations(
+  private def checkValidationsAfterTimeout(
       state: OpenState,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
     (state.marketConfirmed, state.fundsConfirmed) match {
       case (Some(true), Some(true)) =>
-        Effect.persist(ValidationsPassed(state.status.betId, state))
+        requestValidationsPassed(state, sharding)
       case (_, Some(true)) =>
         marketValidationFailed(
           state,
@@ -418,6 +468,29 @@ object Bet {
             state.status.betId,
             s"validations didn't pass (timeout) [${state}]"))
     }
+  }
+
+  private def validationsPassed(
+      state: ValidationsPassedState): Effect[Event, State] = {
+    Effect.none
+      .thenRun((_: State) => BetResultKafkaService.sendEvent(state))
+      .thenRun(
+        (_: State) =>
+          BetResultKafkaService.sendAllMessagesConsumedPoisonPill(
+            ALL_MESSAGES_CONSUMED_ID,
+            state))
+  }
+
+  private def requestValidationsPassed(
+      state: OpenState,
+      sharding: ClusterSharding): Effect[Event, State] = {
+    Effect
+      .persist(ValidationsPassed(state.status.betId, state))
+      .thenRun((_: State) => {
+        val betRef =
+          sharding.entityRefFor(Bet.typeKey, state.status.betId)
+        betRef ! Bet.HandleValidationsPassed(state.status.betId)
+      })
   }
 
   private def marketValidationFailed(
@@ -482,7 +555,7 @@ object Bet {
           Fail(message)
       }
     }
-    Effect.none
+    Effect.none.thenReply(command.replyTo)(_ => Accepted)
   }
 
   private def fail(
