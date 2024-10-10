@@ -61,9 +61,7 @@ object Market {
   final case class GetState(replyTo: ActorRef[Response])
       extends Command
 
-  final case class MarketSettlementStarted(
-      response: Market.Response,
-      replyTo: ActorRef[Response])
+  final case class AllBetsSettled(replyTo: ActorRef[Response])
       extends Command
 
   sealed trait Response extends CborSerializable
@@ -123,7 +121,9 @@ object Market {
       case (state: OpenState, command: Close) => close(state, command)
       case (_, command: Cancel)               => cancel(state, command)
       case (_, command: GetState)             => tell(state, command)
-      case _                                  => invalid(state, command)
+      case (_, command: AllBetsSettled) =>
+        allBetsSettled(state, command)
+      case _ => invalid(state, command)
     }
 
   sealed trait Event extends CborSerializable {
@@ -224,6 +224,15 @@ object Market {
       command: GetState): ReplyEffect[Event, State] = {
     Effect.none.thenReply(command.replyTo)(_ =>
       CurrentState(state.status))
+  }
+
+  private def allBetsSettled(
+      state: State,
+      command: AllBetsSettled): ReplyEffect[Event, State] = {
+    Effect.none
+      .thenRun((_: State) =>
+        BetResultKafkaService.deleteTopic(state.status.marketId))
+      .thenReply(command.replyTo)(_ => Accepted)
   }
 
   private def invalid(

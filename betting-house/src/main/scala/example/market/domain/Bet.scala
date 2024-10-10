@@ -374,16 +374,12 @@ object Bet {
       betId: String,
       marketId: String,
       result: Int,
-      sharding: ClusterSharding,
-      adminClient: AdminClient,
-      topic: String,
-      groupId: String): Future[Bet.Response] = {
+      sharding: ClusterSharding): Future[Bet.Response] = {
 
     if (ALL_MESSAGES_CONSUMED_ID.equals(betId)) {
       BetResultKafkaService.shutdownConsumer(marketId)
-      adminClient.deleteConsumerGroups(
-        java.util.Arrays.asList(groupId))
-      adminClient.deleteTopics(java.util.Arrays.asList(topic))
+      val marketRef = sharding.entityRefFor(Market.typeKey, marketId)
+      marketRef.ask(Market.AllBetsSettled).mapTo[Market.Response]
       Future.successful(AllBetsSettled)
     } else {
       def auxSettle(result: Int)(

@@ -75,15 +75,13 @@ class BetResultTransactionalConsumer(
                   betProto.betId,
                   betProto.marketId,
                   marketResult,
-                  sharding,
-                  adminClient,
-                  topic,
-                  groupId)
+                  sharding)
                 .map { response =>
                   response match {
                     case Bet.AllBetsSettled =>
                       log.warn(
                         s"All bets have been settled for topic ${topic}")
+                      BetResultKafkaService.deleteTopic(marketId)
                     case Bet.Accepted =>
                       log.warn(s"stake settled [${betProto.betId}]")
                     case Bet.RequestUnaccepted(reason) =>
@@ -103,6 +101,9 @@ class BetResultTransactionalConsumer(
           Keep.both
         ) // Keep both the KillSwitch and the stream result (streamDone)
         .run()
+
+    streamDone.onComplete((_) =>
+      BetResultKafkaService.deleteTopicOnComplete(marketId))
 
     killSwitch
   }
