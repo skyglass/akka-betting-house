@@ -118,10 +118,6 @@ object Main {
     val config = new java.util.Properties
     config.putAll(producerSettings.getProperties)
     val admin = AdminClient.create(config)
-    //val newTopic1 = new NewTopic("test1", 3, 3: Short)
-    //val newTopic2 = new NewTopic("test2", 3, 3: Short)
-    //admin.createTopics(java.util.Arrays.asList(newTopic1, newTopic2))
-    //admin.deleteTopics(java.util.Arrays.asList(newTopic1.name()))
     CoordinatedShutdown(system).addTask(
       CoordinatedShutdown.PhaseBeforeActorSystemTerminate,
       "closing kafka admin client") { () =>
@@ -130,17 +126,5 @@ object Main {
     }
     admin
   }
-
-  /*private def createKafkaConsumer(topic: String,
-                                      system: ActorSystem[_]): AdminClient = {
-
-    val producerSettings =
-      ProducerSettings( //they look up on creation at "akka.kafka.producer" in .conf
-        system,
-        new StringSerializer,
-        new ByteArraySerializer)
-    val consumer = BetKafkaProcessor(system)
-    admin
-  }*/
 
 }

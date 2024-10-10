@@ -378,8 +378,6 @@ object Bet {
 
     if (ALL_MESSAGES_CONSUMED_ID.equals(betId)) {
       BetResultKafkaService.shutdownConsumer(marketId)
-      val marketRef = sharding.entityRefFor(Market.typeKey, marketId)
-      marketRef.ask(Market.AllBetsSettled).mapTo[Market.Response]
       Future.successful(AllBetsSettled)
     } else {
       def auxSettle(result: Int)(

@@ -22,7 +22,7 @@ import akka.stream.scaladsl.{
 import example.bet.grpc.{ BetService, SettleMessage }
 import example.betting.{ Bet, Market }
 import example.betting.Bet.Command
-import org.apache.kafka.clients.admin.AdminClient
+import org.apache.kafka.clients.admin.{ AdminClient, NewTopic }
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
@@ -53,6 +53,8 @@ class BetResultTransactionalConsumer(
     // #transactionalFailureRetry
     val topic = s"bet-result-${marketId}"
     val groupId = topic
+    val newTopic = new NewTopic(topic, 3, 3: Short)
+    adminClient.createTopics(java.util.Arrays.asList(newTopic))
     val consumerSettings =
       BetResultConsumerSettings(producer.settings, groupId, system)
     val (killSwitch: UniqueKillSwitch, streamDone: Future[Done]) =
@@ -81,7 +83,6 @@ class BetResultTransactionalConsumer(
                     case Bet.AllBetsSettled =>
                       log.warn(
                         s"All bets have been settled for topic ${topic}")
-                      BetResultKafkaService.deleteTopic(marketId)
                     case Bet.Accepted =>
                       log.warn(s"stake settled [${betProto.betId}]")
                     case Bet.RequestUnaccepted(reason) =>
@@ -103,7 +104,7 @@ class BetResultTransactionalConsumer(
         .run()
 
     streamDone.onComplete((_) =>
-      BetResultKafkaService.deleteTopicOnComplete(marketId))
+      BetResultKafkaService.deleteTopic(marketId))
 
     killSwitch
   }

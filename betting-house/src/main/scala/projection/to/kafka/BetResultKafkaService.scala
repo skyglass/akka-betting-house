@@ -78,20 +78,11 @@ object BetResultKafkaService {
     val topic = s"bet-result-${marketId}"
     val prototype = getPrototype()
     val adminClient = prototype.getAdminClient
+    adminClient.deleteConsumerGroups(java.util.Arrays.asList(topic))
     adminClient.deleteTopics(java.util.Arrays.asList(topic))
     consumers.remove(marketId)
     log.warn(
       s"shut down consumer and deleted topic for marketId [$marketId]}")
-  }
-
-  def deleteTopicOnComplete(marketId: String): Unit = {
-    val topic = s"bet-result-${marketId}"
-    val prototype = getPrototype()
-    val adminClient = prototype.getAdminClient
-    adminClient.deleteTopics(java.util.Arrays.asList(topic))
-    consumers.remove(marketId)
-    log.warn(
-      s"on complete shut down consumer and deleted topic for marketId [$marketId]}")
   }
 
   private def getPrototype(): BetResultTransactionalConsumer = {
