@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CloseMarketRequest {
     private String marketId;
+    private int result;
 }
 

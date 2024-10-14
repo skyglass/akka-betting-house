@@ -67,8 +67,9 @@ object Bet {
 
   private final case class HandleValidationsPassed(betId: String)
       extends Command
-  private final case class MarketOddsAvailable(
-      available: Boolean,
+  private final case class MarketStatusAvailable(
+      open: Boolean,
+      oddsAvailable: Boolean,
       marketOdds: Option[Double])
       extends Command
   private final case class WalletFundsReservationResponded(
@@ -132,7 +133,7 @@ object Bet {
       override val status: Status,
       reason: String)
       extends State(status)
-  final case class MarketValidationFailedState(
+  private final case class MarketValidationFailedState(
       override val status: Status,
       reason: String)
       extends State(status)
@@ -187,7 +188,7 @@ object Bet {
         requestWalletRefund(state, command, sharding, context)
       case (state: MarketValidationFailedState, _) =>
         marketValidationFailed(state)
-      case (state: OpenState, command: MarketOddsAvailable) =>
+      case (state: OpenState, command: MarketStatusAvailable) =>
         validateMarket(state, command, sharding, context)
       case (
           state: OpenState,
@@ -292,18 +293,25 @@ object Bet {
 
   private def validateMarket(
       state: OpenState,
-      command: MarketOddsAvailable,
+      command: MarketStatusAvailable,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
-    if (command.available) {
+    if (!command.open) {
+        marketValidationFailed(
+          state,
+          s"market [${state.status.marketId}] is closed, no more bets allowed",
+          sharding,
+          context)
+    } else if (command.oddsAvailable) {
       if (state.fundsConfirmed.getOrElse(false)) {
         requestValidationsPassed(state, sharding)
+      } else {
+        Effect.persist(MarketConfirmed(state.status.betId, state))
       }
-      Effect.persist(MarketConfirmed(state.status.betId, state))
     } else {
       marketValidationFailed(
         state,
-        s"market odds [${command.marketOdds}] not available",
+        s"market odds [${command.marketOdds}] are less than the bet odds",
         sharding,
         context)
     }
@@ -341,12 +349,13 @@ object Bet {
     context.ask(marketRef, Market.GetState) {
       case Success(Market.CurrentState(marketState)) =>
         val matched = oddsDoMatch(marketState, command)
-        MarketOddsAvailable(
+        MarketStatusAvailable(
+          marketState.open,
           matched.doMatch,
           Option(matched.marketOdds))
       case Failure(ex) =>
         context.log.error(ex.getMessage())
-        MarketOddsAvailable(false, None)
+        MarketStatusAvailable(false, false, None)
     }
   }
 
@@ -383,9 +392,7 @@ object Bet {
       def auxSettle(result: Int)(
           replyTo: ActorRef[Bet.Response]): Bet.Settle =
         Bet.Settle(result, replyTo)
-
       val betRef = sharding.entityRefFor(Bet.typeKey, betId)
-
       betRef.ask(auxSettle(result)).mapTo[Bet.Response]
     }
   }
@@ -468,11 +475,6 @@ object Bet {
       state: ValidationsPassedState): Effect[Event, State] = {
     Effect.none
       .thenRun((_: State) => BetResultKafkaService.sendEvent(state))
-      .thenRun(
-        (_: State) =>
-          BetResultKafkaService.sendAllMessagesConsumedPoisonPill(
-            ALL_MESSAGES_CONSUMED_ID,
-            state))
   }
 
   private def requestValidationsPassed(
@@ -483,7 +485,7 @@ object Bet {
       .thenRun((_: State) => {
         val betRef =
           sharding.entityRefFor(Bet.typeKey, state.status.betId)
-        betRef ! Bet.HandleValidationsPassed(state.status.betId)
+        betRef ! HandleValidationsPassed(state.status.betId)
       })
   }
 

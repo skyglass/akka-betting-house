@@ -118,7 +118,7 @@ class IntegrationSpec
         val expected = Bet.FailedState(
           Bet
             .Status("betId1", "walletId1", "marketId1", 1.26, 100, 0),
-          "market odds [Some(1.25)] not available")
+          "market odds [Some(1.25)] are less than the bet odds")
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
@@ -225,6 +225,60 @@ class IntegrationSpec
 
       wallet ! Wallet.CheckFunds(walletProbe.ref)
       walletProbe.expectMessage(Wallet.CurrentBalance(0))
+    }
+  }
+
+  "a bet" should {
+    "fail if market is already closed" in {
+
+      val walletProbe = createTestProbe[Wallet.Response]
+
+      val wallet = sharding.entityRefFor(Wallet.typeKey, "walletId4")
+
+      wallet ! Wallet.AddFunds(100, walletProbe.ref)
+
+      walletProbe.expectMessage(10.seconds, Wallet.Accepted)
+
+      val marketProbe = createTestProbe[Market.Response]
+
+      val market = sharding.entityRefFor(Market.typeKey, "marketId4")
+
+      market ! Market.Open(
+        Market.Fixture("fixtureId4", "RM", "MU"),
+        Market.Odds(1.25, 1.75, 1.05),
+        OffsetDateTime.now.toInstant.toEpochMilli,
+        marketProbe.ref)
+
+      marketProbe.expectMessage(10.seconds, Market.Accepted)
+
+      market ! Market.Close(0, marketProbe.ref)
+
+      val bet = sharding.entityRefFor(Bet.typeKey, "betId4")
+
+      val betProbe = createTestProbe[Bet.Response]
+
+      bet ! Bet.Open(
+        "walletId4",
+        "marketId4",
+        1.26,
+        100,
+        0,
+        betProbe.ref)
+
+      eventually {
+
+        bet ! Bet.GetState(betProbe.ref)
+
+        val expected = Bet.FailedState(
+          Bet
+            .Status("betId4", "walletId4", "marketId4", 1.26, 100, 0),
+          "market [marketId4] is closed, no more bets allowed")
+
+        betProbe.expectMessage(Bet.CurrentState(expected))
+      }
+
+      wallet ! Wallet.CheckFunds(walletProbe.ref)
+      walletProbe.expectMessage(Wallet.CurrentBalance(100))
     }
   }
 

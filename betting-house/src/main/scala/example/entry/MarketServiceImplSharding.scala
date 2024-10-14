@@ -45,12 +45,17 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
       }
   }
 
-  override def closeMarket(in: example.market.grpc.MarketId)
+  override def closeMarket(in: example.market.grpc.CloseMarketMessage)
       : scala.concurrent.Future[example.market.grpc.Response] = {
     val market = sharding.entityRefFor(Market.typeKey, in.marketId)
 
+    def auxClose(result: Int)(
+        replyTo: ActorRef[Market.Response]): Market.Close = {
+      Market.Close(result, replyTo)
+    }
+
     market
-      .ask(Market.Close)
+      .ask(auxClose(in.result))
       .mapTo[Market.Response]
       .map { response =>
         response match {
@@ -62,6 +67,7 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
         }
       }
   }
+
   override def getState(in: example.market.grpc.MarketId)
       : scala.concurrent.Future[example.market.grpc.MarketData] = {
     val market = sharding.entityRefFor(Market.typeKey, in.marketId)

@@ -10,6 +10,7 @@ import akka.kafka.{ ProducerMessage, Subscriptions }
 import akka.stream.{
   ActorMaterializer,
   KillSwitches,
+  RestartSettings,
   UniqueKillSwitch
 }
 import akka.stream.scaladsl.{
@@ -21,7 +22,7 @@ import akka.stream.scaladsl.{
 }
 import example.bet.grpc.{ BetService, SettleMessage }
 import example.betting.{ Bet, Market }
-import example.betting.Bet.Command
+import example.betting.Bet.{ ALL_MESSAGES_CONSUMED_ID, Command }
 import org.apache.kafka.clients.admin.{ AdminClient, NewTopic }
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -60,9 +61,11 @@ class BetResultTransactionalConsumer(
     val (killSwitch: UniqueKillSwitch, streamDone: Future[Done]) =
       RestartSource
         .onFailuresWithBackoff(
-          minBackoff = 1.seconds,
-          maxBackoff = 30.seconds,
-          randomFactor = 0.2) { () =>
+          RestartSettings(
+            minBackoff = 1.second,
+            maxBackoff = 10.seconds,
+            randomFactor = 0.1)
+          /*.withMaxRestarts(2, 120.minutes)*/ ) { () =>
           Transactional
             .source(
               consumerSettings.kafkaConsumerSettings(),
@@ -92,7 +95,7 @@ class BetResultTransactionalConsumer(
                   }
                 }
               log.warn(
-                s"Settle message: betId - ${betProto.betId}, marketResult - ${marketResult}")
+                s"Settle message: betId - ${betProto.betId}, marketId = ${marketId}, marketResult - ${marketResult}")
             }
         }
         .viaMat(KillSwitches.single)(

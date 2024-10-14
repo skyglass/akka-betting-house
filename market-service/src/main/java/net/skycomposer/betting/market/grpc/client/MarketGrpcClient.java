@@ -41,10 +41,11 @@ public class MarketGrpcClient {
     }
 
     public MarketResponse close(CloseMarketRequest request) {
-        MarketProto.MarketId marketIdRequest = MarketProto.MarketId.newBuilder()
+        MarketProto.CloseMarketMessage closeMarketRequest = MarketProto.CloseMarketMessage.newBuilder()
                 .setMarketId(request.getMarketId())
+                .setResult(request.getResult())
                 .build();
-        MarketProto.Response response = stub.closeMarket(marketIdRequest);
+        MarketProto.Response response = stub.closeMarket(closeMarketRequest);
         return MarketResponse
                 .builder()
                 .message(response.getMessage())

@@ -13,7 +13,14 @@ import akka.persistence.typed.scaladsl.{
   RetentionCriteria
 }
 import akka.persistence.typed.PersistenceId
-import example.betting.Bet.{ handleCommands, Command, State }
+import akka.util.Timeout
+import example.betting.Bet.{
+  handleCommands,
+  ALL_MESSAGES_CONSUMED_ID,
+  Command,
+  HandleValidationsPassed,
+  State
+}
 import projection.to.kafka.BetResultKafkaService
 
 import scala.concurrent.duration._
@@ -25,6 +32,7 @@ import java.time.{ OffsetDateTime, ZoneId }
 object Market {
 
   val typeKey = EntityTypeKey[Command]("market")
+  implicit val timeout: Timeout = 6.seconds
 
   final case class Fixture(
       id: String,
@@ -54,7 +62,13 @@ object Market {
       replyTo: ActorRef[Response])
       extends Command
 
-  final case class Close(replyTo: ActorRef[Response]) extends Command
+  final case class ProcessResults(
+      result: Int, //0 =  winHome, 1 = winAway, 2 = draw
+      replyTo: ActorRef[Response])
+      extends Command
+
+  final case class Close(result: Int, replyTo: ActorRef[Response])
+      extends Command
 
   final case class Cancel(reason: String, replyTo: ActorRef[Response])
       extends Command
@@ -74,11 +88,18 @@ object Market {
       fixture: Fixture,
       odds: Odds,
       result: Int,
+      open: Boolean,
       opensAt: Long)
       extends CborSerializable
   object Status {
     def empty(marketId: String) =
-      Status(marketId, Fixture("", "", ""), Odds(-1, -1, -1), 0, 0)
+      Status(
+        marketId,
+        Fixture("", "", ""),
+        Odds(-1, -1, -1),
+        0,
+        true,
+        0)
   }
   final case class UninitializedState(status: Status) extends State
   final case class OpenState(status: Status) extends State
@@ -88,11 +109,12 @@ object Market {
   def apply(marketId: String): Behavior[Command] =
     Behaviors
       .setup[Command] { context =>
+        val sharding = ClusterSharding(context.system)
         EventSourcedBehavior[Command, Event, State](
           PersistenceId(typeKey.name, marketId),
           UninitializedState(Status.empty(marketId)),
           commandHandler = (state, command) =>
-            handleCommands(state, command, context),
+            handleCommands(state, command, sharding, context),
           eventHandler = handleEvents)
           .withTagger {
             case _ => Set(calculateTag(marketId, tags))
@@ -109,16 +131,20 @@ object Market {
   private def handleCommands(
       state: State,
       command: Command,
+      sharding: ClusterSharding,
       context: ActorContext[Command]): ReplyEffect[Event, State] =
     (state, command) match {
       case (state: UninitializedState, command: Open) =>
         open(state, command)
       case (state: OpenState, command: Update) =>
         update(state, command)
-      case (state: OpenState, command: Close) => close(state, command)
-      case (_, command: Cancel)               => cancel(state, command)
-      case (_, command: GetState)             => tell(state, command)
-      case _                                  => invalid(state, command)
+      case (state: OpenState, command: Close) =>
+        close(state, command, sharding)
+      case (state: ClosedState, command: ProcessResults) =>
+        processResults(state, command)
+      case (_, command: Cancel)   => cancel(state, command)
+      case (_, command: GetState) => tell(state, command)
+      case _                      => invalid(state, command)
     }
 
   sealed trait Event extends CborSerializable {
@@ -136,6 +162,7 @@ object Market {
       result: Option[Int],
       opensAt: Option[Long])
       extends Event
+
   final case class Closed(
       marketId: String,
       result: Int,
@@ -147,16 +174,17 @@ object Market {
   private def handleEvents(state: State, event: Event): State = {
     (state, event) match {
       case (_, Opened(marketId, fixture, odds, opensAt)) =>
-        OpenState(Status(marketId, fixture, odds, 0, opensAt))
+        OpenState(Status(marketId, fixture, odds, 0, true, opensAt))
       case (state: OpenState, Updated(_, odds, result, opensAt)) =>
         state.copy(status = Status(
           state.status.marketId,
           state.status.fixture,
           odds.getOrElse(state.status.odds),
           result.getOrElse(state.status.result),
+          state.status.open,
           opensAt.getOrElse(state.status.opensAt)))
       case (state: OpenState, Closed(_, result, _)) =>
-        ClosedState(state.status.copy(result = result))
+        ClosedState(state.status.copy(result = result, open = false))
       case (_, Cancelled(_, _)) =>
         CancelledState(state.status)
     }
@@ -173,9 +201,6 @@ object Market {
         command.opensAt)
     Effect
       .persist(opened)
-      .thenRun((_: State) =>
-        BetResultKafkaService
-          .createConsumer(state.status.marketId, 2))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
@@ -195,13 +220,41 @@ object Market {
 
   private def close(
       state: State,
-      command: Close): ReplyEffect[Closed, State] = {
+      command: Close,
+      sharding: ClusterSharding): ReplyEffect[Closed, State] = {
     val closed = Closed(
       state.status.marketId,
       state.status.result,
       OffsetDateTime.now(ZoneId.of("UTC")))
     Effect
       .persist(closed)
+      .thenRun((_: State) => {
+        def auxProcessResults(result: Int)(
+            replyTo: ActorRef[Market.Response])
+            : Market.ProcessResults =
+          Market.ProcessResults(result, replyTo)
+        val marketRef =
+          sharding.entityRefFor(Market.typeKey, state.status.marketId)
+        marketRef
+          .ask(auxProcessResults(state.status.result))
+          .mapTo[Market.Response]
+      })
+      .thenReply(command.replyTo)(_ => Accepted)
+  }
+
+  private def processResults(
+      state: ClosedState,
+      command: ProcessResults): ReplyEffect[Closed, State] = {
+    Effect.none
+      .thenRun((_: State) =>
+        BetResultKafkaService
+          .createConsumer(state.status.marketId, state.status.result))
+      .thenRun(
+        (_: State) =>
+          BetResultKafkaService
+            .sendAllMessagesConsumedPoisonPill(
+              state.status.marketId,
+              ALL_MESSAGES_CONSUMED_ID))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 

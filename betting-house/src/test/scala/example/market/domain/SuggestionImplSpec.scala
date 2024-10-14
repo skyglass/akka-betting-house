@@ -94,7 +94,7 @@ class SuggestionImplSpec
 
       marketProbe.expectMessage(10.seconds, Market.Accepted)
 
-      market ! Market.Close(marketProbe.ref)
+      market ! Market.Close(0, marketProbe.ref)
 
       val bet = sharding.entityRefFor(Bet.typeKey, "betId1")
 

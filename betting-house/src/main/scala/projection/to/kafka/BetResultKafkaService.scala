@@ -23,12 +23,14 @@ import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.HashMap
 import scala.concurrent.{ ExecutionContext, Future }
 
 object BetResultKafkaService {
   val log = LoggerFactory.getLogger(this.getClass)
   val PROTOTYPE_KEY = "prototype-key"
+  val counter = new AtomicInteger(0);
 
   private val consumers =
     new HashMap[String, BetResultTransactionalConsumer]()
@@ -49,6 +51,9 @@ object BetResultKafkaService {
   }
 
   def createConsumer(marketId: String, marketResult: Int): Unit = {
+    if (!consumers.get(marketId).isEmpty) {
+      return
+    }
     val prototype = getPrototype()
     implicit val producer = prototype.getProducer
     implicit val adminClient = prototype.getAdminClient
@@ -65,24 +70,34 @@ object BetResultKafkaService {
       consumer: BetResultTransactionalConsumer,
       killSwitch: UniqueKillSwitch): Unit = {
     consumers.put(marketId, consumer)
+    log.warn(
+      s"try to add killSwitch for consumer for marketId [$marketId]}")
     killSwitches.put(marketId, killSwitch)
+    log.warn(
+      s"added killSwitch for consumer for marketId [$marketId] and killSwitch [{${killSwitch.toString()}]")
   }
 
   def shutdownConsumer(marketId: String): Unit = {
-    val killSwitch = killSwitches.get(marketId).get
-    killSwitch.shutdown()
-    killSwitches.remove(marketId)
+    log.warn(
+      s"try to shutdown killSwitch for consumer for marketId [$marketId]")
+    val killSwitch = killSwitches.get(marketId)
+    if (!killSwitch.isEmpty) {
+      killSwitch.get.shutdown()
+      killSwitches.remove(marketId)
+      log.warn(
+        s"shut down killSwitch for consumer for marketId [$marketId] and killSwitch [{${killSwitch.toString()}]")
+    }
   }
 
   def deleteTopic(marketId: String): Unit = {
-    val topic = s"bet-result-${marketId}"
-    val prototype = getPrototype()
-    val adminClient = prototype.getAdminClient
-    adminClient.deleteConsumerGroups(java.util.Arrays.asList(topic))
-    adminClient.deleteTopics(java.util.Arrays.asList(topic))
+    //TODO: fix deletion of the topics: maybe implement a scheduler, which will delete old topics regularly
+    //TODO: currently deletion of the topics doesn't work, so I have commented it, until further research
+    //val topic = s"bet-result-${marketId}"
+    //val prototype = getPrototype()
+    //val adminClient = prototype.getAdminClient
+    //adminClient.deleteConsumerGroups(java.util.Arrays.asList(topic))
+    //adminClient.deleteTopics(java.util.Arrays.asList(topic))
     consumers.remove(marketId)
-    log.warn(
-      s"shut down consumer and deleted topic for marketId [$marketId]}")
   }
 
   private def getPrototype(): BetResultTransactionalConsumer = {
@@ -94,7 +109,7 @@ object BetResultKafkaService {
     implicit val producer = prototype.getProducer
     implicit val ec = prototype.getEc
     val topic = s"bet-result-${state.status.marketId}"
-    log.debug(
+    log.warn(
       s"sending bet result event with betId [${state.status.betId}] to topic [${topic}]}")
 
     val serializedEvent = serialize(state.status.betId, state)
@@ -102,7 +117,7 @@ object BetResultKafkaService {
       val record =
         new ProducerRecord(topic, state.status.betId, serializedEvent)
       producer.send(record).map { _ =>
-        log.debug(
+        log.warn(
           s"published event with betId [${state.status.betId}] to topic [$topic]}")
         Done
       }
@@ -113,22 +128,22 @@ object BetResultKafkaService {
   }
 
   def sendAllMessagesConsumedPoisonPill(
-      poisonPillId: String,
-      state: ValidationsPassedState): Future[Done] = {
+      marketId: String,
+      poisonPillId: String): Future[Done] = {
     val prototype = getPrototype()
     implicit val producer = prototype.getProducer
     implicit val ec = prototype.getEc
-    val topic = s"bet-result-${state.status.marketId}"
-    log.debug(
-      s"sending poison pill message telling that all messages consumed for topic [${topic}]}")
+    val topic = s"bet-result-${marketId}"
+    log.warn(
+      s"sending poison pill message telling that all messages consumed for marketId [$marketId] and topic [$topic]")
 
-    val serializedEvent = serialize(poisonPillId, state)
+    val serializedEvent = serialize(poisonPillId, marketId)
     if (!serializedEvent.isEmpty) {
       val record =
         new ProducerRecord(topic, poisonPillId, serializedEvent)
       producer.send(record).map { _ =>
-        log.debug(
-          s"published poison pill event with poisonPillId [${poisonPillId}] to topic [$topic]}")
+        log.warn(
+          s"published poison pill event with poisonPillId [${poisonPillId}] for marketId [$marketId] to topic [$topic]}")
         Done
       }
       Future.successful(Done)
@@ -147,6 +162,14 @@ object BetResultKafkaService {
       state.status.odds,
       state.status.stake,
       state.status.result)
+    proto.toByteArray
+  }
+
+  private def serialize(
+      betId: String,
+      marketId: String): Array[Byte] = {
+    val proto =
+      example.bet.grpc.Bet(betId, "undefined", marketId, -1, -1, -1)
     proto.toByteArray
   }
 
