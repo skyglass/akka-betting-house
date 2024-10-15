@@ -463,6 +463,12 @@ object Bet {
           s"market validation failed (timeout) [${state}]",
           sharding,
           context)
+      case (Some(true), _) =>
+        marketValidationFailed(
+          state,
+          s"funds reservation failed (timeout) [${state}]",
+          sharding,
+          context)
       case _ =>
         Effect.persist(
           Failed(

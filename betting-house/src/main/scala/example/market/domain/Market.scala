@@ -1,12 +1,13 @@
 package example.betting
 
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, ReplyEffect, RetentionCriteria}
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
-import example.betting.Bet.{ALL_MESSAGES_CONSUMED_ID, Command, HandleValidationsPassed, State, handleCommands}
+import example.betting.Bet.{ALL_MESSAGES_CONSUMED_ID, Failed, FailedState}
+import example.betting.Market.{ClosedState, Command, CreateResultsConsumer, SendAllMessagesConsumedPoisonPill, State}
 import projection.to.kafka.BetResultKafkaService
 
 import scala.concurrent.duration._
@@ -59,6 +60,12 @@ object Market {
   final case class AllMessagesConsumed(replyTo: ActorRef[Response])
     extends Command
 
+  private final case class ConsumerCreationTimeout(seconds: Int, replyTo: ActorRef[Response])
+    extends Command
+
+  private final case class SendAlleMessagesConsumedPoisonPillTimeout(seconds: Int, replyTo: ActorRef[Response])
+    extends Command
+
   final case class Close(result: Int, //0 =  winHome, 1 = winAway, 2 = draw
                          replyTo: ActorRef[Response])
       extends Command
@@ -98,34 +105,38 @@ object Market {
   final case class OpenState(status: Status) extends State
   final case class ClosedState(status: Status) extends State
   final case class CancelledState(status: Status) extends State
+  final case class FailedState(status: Status, reason: String) extends State
 
   def apply(marketId: String): Behavior[Command] =
-    Behaviors
-      .setup[Command] { context =>
-        val sharding = ClusterSharding(context.system)
-        EventSourcedBehavior[Command, Event, State](
-          PersistenceId(typeKey.name, marketId),
-          UninitializedState(Status.empty(marketId)),
-          commandHandler = (state, command) =>
-            handleCommands(state, command, sharding, context),
-          eventHandler = handleEvents)
-          .withTagger {
-            case _ => Set(calculateTag(marketId, tags))
-          }
-          .withRetention(RetentionCriteria
-            .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 2))
-          .onPersistFailure(
-            SupervisorStrategy.restartWithBackoff(
-              minBackoff = 10.seconds,
-              maxBackoff = 60.seconds,
-              randomFactor = 0.1))
-      }
+    Behaviors.withTimers { timers =>
+      Behaviors
+        .setup[Command] { context =>
+          val sharding = ClusterSharding(context.system)
+          EventSourcedBehavior[Command, Event, State](
+            PersistenceId(typeKey.name, marketId),
+            UninitializedState(Status.empty(marketId)),
+            commandHandler = (state, command) =>
+              handleCommands(state, command, sharding, context, timers),
+            eventHandler = handleEvents)
+            .withTagger {
+              case _ => Set(calculateTag(marketId, tags))
+            }
+            .withRetention(RetentionCriteria
+              .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 2))
+            .onPersistFailure(
+              SupervisorStrategy.restartWithBackoff(
+                minBackoff = 10.seconds,
+                maxBackoff = 60.seconds,
+                randomFactor = 0.1))
+        }
+    }
 
   private def handleCommands(
       state: State,
       command: Command,
       sharding: ClusterSharding,
-      context: ActorContext[Command]): ReplyEffect[Event, State] =
+      context: ActorContext[Command],
+      timer: TimerScheduler[Command]): ReplyEffect[Event, State] =
     (state, command) match {
       case (state: UninitializedState, command: Open) =>
         open(state, command)
@@ -134,11 +145,15 @@ object Market {
       case (state: OpenState, command: Close) =>
         close(state, command, sharding)
       case (state: ClosedState, command: CreateResultsConsumer) =>
-        createResultsConsumer(state, command)
+        createResultsConsumer(state, command, sharding, timer)
       case (state: ClosedState, command: SendAllMessagesConsumedPoisonPill) =>
-        sendAllMessagesConsumedPoisonPill(state, command)
+        sendAllMessagesConsumedPoisonPill(state, command, timer)
       case (state: ClosedState, command: AllMessagesConsumed) =>
         allMessagesConsumed(state, command)
+      case (state: ClosedState, command: ConsumerCreationTimeout) =>
+        consumerCreationTimeout(state, command)
+      case (state: ClosedState, command: SendAlleMessagesConsumedPoisonPillTimeout) =>
+        sendAllMessagesConsumedPoisonPillTimeout(state, command)
       case (_, command: Cancel)   => cancel(state, command)
       case (_, command: GetState) => tell(state, command)
       case _                      => invalid(state, command)
@@ -167,6 +182,8 @@ object Market {
   final case class Cancelled(marketId: String, reason: String)
       extends Event
 
+  final case class Failed(marketId: String, reason: String) extends Event
+
   private def handleEvents(state: State, event: Event): State = {
     (state, event) match {
       case (_, Opened(marketId, fixture, odds, opensAt)) =>
@@ -183,6 +200,8 @@ object Market {
         ClosedState(state.status.copy(result = result, open = false))
       case (_, Cancelled(_, _)) =>
         CancelledState(state.status)
+      case (_, Failed(_, reason)) =>
+        FailedState(state.status, reason)
     }
   }
 
@@ -234,10 +253,31 @@ object Market {
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
+  private def consumerCreationTimeout( state: ClosedState, command: ConsumerCreationTimeout): ReplyEffect[Event, State] = {
+        Effect.persist(
+          Failed(
+            state.status.marketId,
+            s"consumer creation timeout[${state}]"))
+          .thenReply(command.replyTo)(_ => Accepted)
+  }
+
+  private def sendAllMessagesConsumedPoisonPillTimeout( state: ClosedState, command: SendAlleMessagesConsumedPoisonPillTimeout): ReplyEffect[Event, State] = {
+    Effect.persist(
+        Failed(
+          state.status.marketId,
+          s"send all messages consumed poison pill timeout[${state}]"))
+      .thenReply(command.replyTo)(_ => Accepted)
+  }
+
   private def createResultsConsumer(
       state: ClosedState,
       command: CreateResultsConsumer,
-      sharding: ClusterSharding): ReplyEffect[Closed, State] = {
+      sharding: ClusterSharding,
+      timer: TimerScheduler[Command]): ReplyEffect[Event, State] = {
+    timer.startSingleTimer(
+      "lifespan",
+      ConsumerCreationTimeout(5, command.replyTo), // this would read from configuration
+      5.seconds)
     Effect.none
       .thenRun((_: State) =>
         BetResultKafkaService
@@ -252,24 +292,13 @@ object Market {
 
   private def sendAllMessagesConsumedPoisonPill(
                                      state: ClosedState,
-                                     command: SendAllMessagesConsumedPoisonPill): ReplyEffect[Closed, State] = {
+                                     command: SendAllMessagesConsumedPoisonPill,
+                                     timer: TimerScheduler[Command]): ReplyEffect[Closed, State] = {
+    timer.startSingleTimer(
+      "lifespan",
+      SendAlleMessagesConsumedPoisonPillTimeout(5, command.replyTo), // this would read from configuration
+      5.seconds)
     Effect.none
-      .thenRun(
-        (_: State) =>
-          BetResultKafkaService
-            .sendAllMessagesConsumedPoisonPill(
-              state.status.marketId,
-              ALL_MESSAGES_CONSUMED_ID))
-      .thenReply(command.replyTo)(_ => Accepted)
-  }
-
-  private def createResultsConsumer(
-                                     state: ClosedState,
-                                     command: CreateResultsConsumer): ReplyEffect[Closed, State] = {
-    Effect.none
-      .thenRun((_: State) =>
-        BetResultKafkaService
-          .createConsumer(state.status.marketId, state.status.result))
       .thenRun(
         (_: State) =>
           BetResultKafkaService
