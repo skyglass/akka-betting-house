@@ -1,30 +1,17 @@
 package example.betting
 
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
-import akka.cluster.sharding.typed.scaladsl.{
-  ClusterSharding,
-  EntityTypeKey
-}
-import akka.persistence.typed.scaladsl.{
-  Effect,
-  EventSourcedBehavior,
-  ReplyEffect,
-  RetentionCriteria
-}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
+import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, ReplyEffect, RetentionCriteria}
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
-import example.betting.Bet.{
-  handleCommands,
-  ALL_MESSAGES_CONSUMED_ID,
-  Command,
-  HandleValidationsPassed,
-  State
-}
+import example.betting.Bet.{ALL_MESSAGES_CONSUMED_ID, Command, HandleValidationsPassed, State, handleCommands}
 import projection.to.kafka.BetResultKafkaService
 
 import scala.concurrent.duration._
-import java.time.{ OffsetDateTime, ZoneId }
+import java.time.{OffsetDateTime, ZoneId}
+import scala.concurrent.Future
 
 /**
  *
@@ -58,16 +45,22 @@ object Market {
   final case class Update(
       odds: Option[Odds],
       opensAt: Option[Long],
-      result: Option[Int], //0 =  winHome, 1 = winAway, 2 = draw
       replyTo: ActorRef[Response])
       extends Command
 
-  final case class ProcessResults(
+  final case class CreateResultsConsumer(
       result: Int, //0 =  winHome, 1 = winAway, 2 = draw
       replyTo: ActorRef[Response])
       extends Command
 
-  final case class Close(result: Int, replyTo: ActorRef[Response])
+  final case class SendAllMessagesConsumedPoisonPill(replyTo: ActorRef[Response])
+    extends Command
+
+  final case class AllMessagesConsumed(replyTo: ActorRef[Response])
+    extends Command
+
+  final case class Close(result: Int, //0 =  winHome, 1 = winAway, 2 = draw
+                         replyTo: ActorRef[Response])
       extends Command
 
   final case class Cancel(reason: String, replyTo: ActorRef[Response])
@@ -140,8 +133,12 @@ object Market {
         update(state, command)
       case (state: OpenState, command: Close) =>
         close(state, command, sharding)
-      case (state: ClosedState, command: ProcessResults) =>
-        processResults(state, command)
+      case (state: ClosedState, command: CreateResultsConsumer) =>
+        createResultsConsumer(state, command)
+      case (state: ClosedState, command: SendAllMessagesConsumedPoisonPill) =>
+        sendAllMessagesConsumedPoisonPill(state, command)
+      case (state: ClosedState, command: AllMessagesConsumed) =>
+        allMessagesConsumed(state, command)
       case (_, command: Cancel)   => cancel(state, command)
       case (_, command: GetState) => tell(state, command)
       case _                      => invalid(state, command)
@@ -159,7 +156,6 @@ object Market {
   final case class Updated(
       marketId: String,
       odds: Option[Odds],
-      result: Option[Int],
       opensAt: Option[Long])
       extends Event
 
@@ -175,12 +171,12 @@ object Market {
     (state, event) match {
       case (_, Opened(marketId, fixture, odds, opensAt)) =>
         OpenState(Status(marketId, fixture, odds, 0, true, opensAt))
-      case (state: OpenState, Updated(_, odds, result, opensAt)) =>
+      case (state: OpenState, Updated(_, odds, opensAt)) =>
         state.copy(status = Status(
           state.status.marketId,
           state.status.fixture,
           odds.getOrElse(state.status.odds),
-          result.getOrElse(state.status.result),
+          state.status.result,
           state.status.open,
           opensAt.getOrElse(state.status.opensAt)))
       case (state: OpenState, Closed(_, result, _)) =>
@@ -211,7 +207,6 @@ object Market {
       Updated(
         state.status.marketId,
         command.odds,
-        command.result,
         command.opensAt)
     Effect
       .persist(updated)
@@ -229,22 +224,48 @@ object Market {
     Effect
       .persist(closed)
       .thenRun((_: State) => {
-        def auxProcessResults(result: Int)(
-            replyTo: ActorRef[Market.Response])
-            : Market.ProcessResults =
-          Market.ProcessResults(result, replyTo)
-        val marketRef =
-          sharding.entityRefFor(Market.typeKey, state.status.marketId)
+        def auxCreateResultsConsumer(result: Int)(replyTo: ActorRef[Market.Response]): Market.CreateResultsConsumer =
+          Market.CreateResultsConsumer(result, replyTo)
+        val marketRef = sharding.entityRefFor(Market.typeKey, state.status.marketId)
         marketRef
-          .ask(auxProcessResults(state.status.result))
+          .ask(auxCreateResultsConsumer(state.status.result))
           .mapTo[Market.Response]
       })
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
-  private def processResults(
+  private def createResultsConsumer(
       state: ClosedState,
-      command: ProcessResults): ReplyEffect[Closed, State] = {
+      command: CreateResultsConsumer,
+      sharding: ClusterSharding): ReplyEffect[Closed, State] = {
+    Effect.none
+      .thenRun((_: State) =>
+        BetResultKafkaService
+          .createConsumer(state.status.marketId, state.status.result))
+      .thenRun((_: State) => {
+        val marketRef = sharding.entityRefFor(Market.typeKey, state.status.marketId)
+        marketRef.ask(SendAllMessagesConsumedPoisonPill)
+          .mapTo[Market.Response]
+      })
+      .thenReply(command.replyTo)(_ => Accepted)
+  }
+
+  private def sendAllMessagesConsumedPoisonPill(
+                                     state: ClosedState,
+                                     command: SendAllMessagesConsumedPoisonPill): ReplyEffect[Closed, State] = {
+    Effect.none
+      .thenRun(
+        (_: State) =>
+          BetResultKafkaService
+            .sendAllMessagesConsumedPoisonPill(
+              state.status.marketId,
+              ALL_MESSAGES_CONSUMED_ID))
+      .thenReply(command.replyTo)(_ => Accepted)
+  }
+
+  private def createResultsConsumer(
+                                     state: ClosedState,
+                                     command: CreateResultsConsumer): ReplyEffect[Closed, State] = {
     Effect.none
       .thenRun((_: State) =>
         BetResultKafkaService
@@ -255,6 +276,20 @@ object Market {
             .sendAllMessagesConsumedPoisonPill(
               state.status.marketId,
               ALL_MESSAGES_CONSUMED_ID))
+      .thenReply(command.replyTo)(_ => Accepted)
+  }
+
+  def requestAllMessagesConsumed(marketId: String, sharding: ClusterSharding): Future[Market.Response] = {
+    val marketRef = sharding.entityRefFor(Market.typeKey, marketId)
+    marketRef.ask(Market.AllMessagesConsumed).mapTo[Market.Response]
+  }
+
+  private def allMessagesConsumed(
+                                     state: ClosedState,
+                                     command: AllMessagesConsumed): ReplyEffect[Closed, State] = {
+    Effect.none
+      .thenRun((_: State) =>
+        BetResultKafkaService.deleteTopic(state.status.marketId))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 

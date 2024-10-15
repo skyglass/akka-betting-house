@@ -152,7 +152,7 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
 
       val result = Some(marketData.result.value)
 
-      Market.Update(odds, opensAt, result, replyTo)
+      Market.Update(odds, opensAt, replyTo)
 
     }
 

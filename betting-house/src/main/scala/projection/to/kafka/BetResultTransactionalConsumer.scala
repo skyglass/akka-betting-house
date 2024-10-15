@@ -107,7 +107,7 @@ class BetResultTransactionalConsumer(
         .run()
 
     streamDone.onComplete((_) =>
-      BetResultKafkaService.deleteTopic(marketId))
+      Market.requestAllMessagesConsumed(marketId, sharding))
 
     killSwitch
   }

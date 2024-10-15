@@ -160,7 +160,6 @@ class SuggestionImplSpec
             .plus(1000, ChronoUnit.SECONDS)
             .toInstant
             .toEpochMilli),
-        null,
         marketProbe.ref)
 
       val bet = sharding.entityRefFor(Bet.typeKey, betId)

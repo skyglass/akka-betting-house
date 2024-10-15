@@ -92,11 +92,11 @@ object BetResultKafkaService {
   def deleteTopic(marketId: String): Unit = {
     //TODO: fix deletion of the topics: maybe implement a scheduler, which will delete old topics regularly
     //TODO: currently deletion of the topics doesn't work, so I have commented it, until further research
-    //val topic = s"bet-result-${marketId}"
-    //val prototype = getPrototype()
-    //val adminClient = prototype.getAdminClient
-    //adminClient.deleteConsumerGroups(java.util.Arrays.asList(topic))
-    //adminClient.deleteTopics(java.util.Arrays.asList(topic))
+    val topic = s"bet-result-${marketId}"
+    val prototype = getPrototype()
+    val adminClient = prototype.getAdminClient
+    adminClient.deleteConsumerGroups(java.util.Arrays.asList(topic))
+    adminClient.deleteTopics(java.util.Arrays.asList(topic))
     consumers.remove(marketId)
   }
 
