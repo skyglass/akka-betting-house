@@ -107,7 +107,19 @@ class BetResultTransactionalConsumer(
         .run()
 
     streamDone.onComplete((_) =>
-      Market.requestAllMessagesConsumed(marketId, sharding))
+      Market
+        .requestAllMessagesConsumed(marketId, sharding)
+        .map { response =>
+          response match {
+            case Market.Accepted =>
+              log.warn(
+                s"All messages have been consumed for topic ${topic}")
+            case Market.RequestUnaccepted(reason) =>
+              val message =
+                s"All messages consumed failure for market [${marketId}]. Reason [${reason}]"
+              log.error(message)
+          }
+        })
 
     killSwitch
   }

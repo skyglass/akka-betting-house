@@ -297,11 +297,11 @@ object Bet {
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
     if (!command.open) {
-        marketValidationFailed(
-          state,
-          s"market [${state.status.marketId}] is closed, no more bets allowed",
-          sharding,
-          context)
+      marketValidationFailed(
+        state,
+        s"market [${state.status.marketId}] is closed, no more bets allowed",
+        sharding,
+        context)
     } else if (command.oddsAvailable) {
       if (state.fundsConfirmed.getOrElse(false)) {
         requestValidationsPassed(state, sharding)

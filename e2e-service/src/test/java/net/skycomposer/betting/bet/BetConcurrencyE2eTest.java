@@ -43,7 +43,6 @@ public class BetConcurrencyE2eTest extends E2eTest {
     @Test
     @SneakyThrows
     void createParallelBetsThenFundsAreZeroTest() {
-        AtomicInteger counter = new AtomicInteger(0);
         String betId = "betId";
         String walletId = "walletId1";
         int walletBalance = 100;

@@ -2,14 +2,11 @@ package net.skycomposer.betting.market;
 
 import java.time.Instant;
 
+import net.skycomposer.betting.common.domain.dto.market.*;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.skycomposer.betting.common.domain.dto.market.FixtureData;
-import net.skycomposer.betting.common.domain.dto.market.MarketData;
-import net.skycomposer.betting.common.domain.dto.market.MarketResponse;
-import net.skycomposer.betting.common.domain.dto.market.OddsData;
 
 @Component
 @RequiredArgsConstructor
@@ -38,5 +35,13 @@ public class MarketTestHelper {
         return marketClient.open(marketData);
     }
 
+    public MarketResponse closeMarket(String marketId, MarketData.Result result) {
+        CloseMarketRequest closeMarketRequest = CloseMarketRequest
+                .builder()
+                .marketId(marketId)
+                .result(result.getValue())
+                .build();
+        return marketClient.close(closeMarketRequest);
+    }
 }
 
