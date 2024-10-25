@@ -22,7 +22,7 @@ import akka.stream.scaladsl.{
 }
 import example.bet.grpc.{ BetService, SettleMessage }
 import example.betting.{ Bet, Market }
-import example.betting.Bet.{ ALL_MESSAGES_CONSUMED_ID, Command }
+import example.betting.Bet.{ Command }
 import org.apache.kafka.clients.admin.{ AdminClient, NewTopic }
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -78,14 +78,10 @@ class BetResultTransactionalConsumer(
               Bet
                 .requestBetSettlement(
                   betProto.betId,
-                  betProto.marketId,
                   marketResult,
                   sharding)
                 .map { response =>
                   response match {
-                    case Bet.AllBetsSettled =>
-                      log.warn(
-                        s"All bets have been settled for topic ${topic}")
                     case Bet.Accepted =>
                       log.warn(s"stake settled [${betProto.betId}]")
                     case Bet.RequestUnaccepted(reason) =>
@@ -94,7 +90,7 @@ class BetResultTransactionalConsumer(
                       log.error(message)
                   }
                 }
-              log.warn(
+              log.debug(
                 s"Settle message: betId - ${betProto.betId}, marketId = ${marketId}, marketResult - ${marketResult}")
             }
         }

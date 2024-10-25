@@ -30,7 +30,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 object BetResultKafkaService {
   val log = LoggerFactory.getLogger(this.getClass)
   val PROTOTYPE_KEY = "prototype-key"
-  val counter = new AtomicInteger(0);
 
   private val consumers =
     new HashMap[String, BetResultTransactionalConsumer]()
@@ -94,9 +93,9 @@ object BetResultKafkaService {
     //TODO: currently deletion of the topics doesn't work, so I have commented it, until further research
     val topic = s"bet-result-${marketId}"
     val prototype = getPrototype()
-    val adminClient = prototype.getAdminClient
-    adminClient.deleteConsumerGroups(java.util.Arrays.asList(topic))
-    adminClient.deleteTopics(java.util.Arrays.asList(topic))
+    //val adminClient = prototype.getAdminClient
+    //adminClient.deleteConsumerGroups(java.util.Arrays.asList(topic))
+    //adminClient.deleteTopics(java.util.Arrays.asList(topic))
     consumers.remove(marketId)
   }
 
@@ -127,31 +126,6 @@ object BetResultKafkaService {
     }
   }
 
-  def sendAllMessagesConsumedPoisonPill(
-      marketId: String,
-      poisonPillId: String): Future[Done] = {
-    val prototype = getPrototype()
-    implicit val producer = prototype.getProducer
-    implicit val ec = prototype.getEc
-    val topic = s"bet-result-${marketId}"
-    log.warn(
-      s"sending poison pill message telling that all messages consumed for marketId [$marketId] and topic [$topic]")
-
-    val serializedEvent = serialize(poisonPillId, marketId)
-    if (!serializedEvent.isEmpty) {
-      val record =
-        new ProducerRecord(topic, poisonPillId, serializedEvent)
-      producer.send(record).map { _ =>
-        log.warn(
-          s"published poison pill event with poisonPillId [${poisonPillId}] for marketId [$marketId] to topic [$topic]}")
-        Done
-      }
-      Future.successful(Done)
-    } else {
-      Future.successful(Done)
-    }
-  }
-
   private def serialize(
       betId: String,
       state: Bet.ValidationsPassedState): Array[Byte] = {
@@ -162,14 +136,6 @@ object BetResultKafkaService {
       state.status.odds,
       state.status.stake,
       state.status.result)
-    proto.toByteArray
-  }
-
-  private def serialize(
-      betId: String,
-      marketId: String): Array[Byte] = {
-    val proto =
-      example.bet.grpc.Bet(betId, "undefined", marketId, -1, -1, -1)
     proto.toByteArray
   }
 

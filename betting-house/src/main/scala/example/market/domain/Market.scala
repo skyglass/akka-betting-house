@@ -20,7 +20,6 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import example.betting.Bet.{
   oddsDoMatch,
-  ALL_MESSAGES_CONSUMED_ID,
   Close,
   Command,
   Fail,
@@ -86,7 +85,7 @@ object Market {
       replyTo: ActorRef[Response])
       extends Command
 
-  private final case class ConsumerCreationTimeout(
+  private final case class MarketCloseTimeout(
       seconds: Int,
       replyTo: ActorRef[Response])
       extends Command
@@ -144,7 +143,6 @@ object Market {
   final case class OpenState(status: Status) extends State
   final case class ClosedState(status: Status) extends State
 
-  final case class ConsumerCreatedState(status: Status) extends State
   final case class CancelledState(status: Status) extends State
   final case class FailedState(status: Status, reason: String)
       extends State
@@ -193,21 +191,17 @@ object Market {
       case (state: OpenState, command: Update) =>
         update(state, command)
       case (state: OpenState, command: Close) =>
-        close(state, command, context, sharding)
+        close(state, command, context, sharding, timer)
       case (state: ClosedState, command: CreateResultsConsumer) =>
-        createResultsConsumer(state, command, timer)
+        createResultsConsumer(state, command)
       case (state: ClosedState, command: ConsumerCreationSuccess) =>
         consumerCreationSuccess(state, command)
       case (state: ClosedState, command: AllMessagesConsumed) =>
-        allMessagesConsumed(state, command, timer)
-      case (state: ClosedState, command: ConsumerCreationTimeout) =>
-        consumerCreationTimeout(state, command)
+        allMessagesConsumed(state, command)
+      case (state: ClosedState, command: MarketCloseTimeout) =>
+        marketCloseTimeout(state, command)
       case (state: ClosedState, command: ConsumerCreationFailure) =>
-        consumerCreationFailure(state, command.reason, command)
-      case (
-          state: ClosedState,
-          command: AllMessagesConsumedTimeout) =>
-        allMessagesConsumedTimeout(state, command)
+        marketFailure(state, command.reason, command)
       case (_, command: Cancel)   => cancel(state, command)
       case (_, command: GetState) => tell(state, command)
       case _                      => invalid(state, command)
@@ -292,10 +286,19 @@ object Market {
       state: State,
       command: Close,
       context: ActorContext[Command],
-      sharding: ClusterSharding): ReplyEffect[Closed, State] = {
+      sharding: ClusterSharding,
+      timer: TimerScheduler[Command]): ReplyEffect[Closed, State] = {
+    //TODO: find out why timer doesn't work
+    /*timer.startSingleTimer(
+      "lifespan",
+      MarketCloseTimeout(
+        10,
+        command.replyTo
+      ), // this would read from configuration
+      10.seconds)*/
     val closed = Closed(
       state.status.marketId,
-      state.status.result,
+      command.result,
       OffsetDateTime.now(ZoneId.of("UTC")))
     Effect
       .persist(closed)
@@ -307,17 +310,19 @@ object Market {
         val marketRef =
           sharding.entityRefFor(Market.typeKey, state.status.marketId)
 
-        context.ask(
-          marketRef,
-          auxCreateResultsConsumer(state.status.result)) {
-          case Success(command: Command) =>
-            ConsumerCreationSuccess(command.replyTo)
-          case Failure(ex) =>
-            val message =
-              s"Consumer creation failure. Reason [${ex.getMessage}]"
-            context.log.error(message)
-            ConsumerCreationFailure(message, command.replyTo)
-        }
+        context
+          .ask(marketRef, auxCreateResultsConsumer(command.result)) {
+            case Success(_) =>
+              val message =
+                s"Consumer creation success. Market [${state.status.marketId}]"
+              context.log.error(message)
+              ConsumerCreationSuccess(command.replyTo)
+            case Failure(ex) =>
+              val message =
+                s"Consumer creation failure. Reason [${ex.getMessage}]"
+              context.log.error(message)
+              ConsumerCreationFailure(message, command.replyTo)
+          }
       })
       .thenReply(command.replyTo)(_ => Accepted)
   }
@@ -330,16 +335,13 @@ object Market {
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
-  private def consumerCreationTimeout(
+  private def marketCloseTimeout(
       state: ClosedState,
-      command: ConsumerCreationTimeout): ReplyEffect[Event, State] = {
-    consumerCreationFailure(
-      state,
-      s"consumer creation timeout[${state}]",
-      command)
+      command: MarketCloseTimeout): ReplyEffect[Event, State] = {
+    marketFailure(state, s"market close timeout[${state}]", command)
   }
 
-  private def consumerCreationFailure(
+  private def marketFailure(
       state: ClosedState,
       reason: String,
       command: Command): ReplyEffect[Event, State] = {
@@ -348,39 +350,13 @@ object Market {
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
-  private def allMessagesConsumedTimeout(
-      state: ClosedState,
-      command: AllMessagesConsumedTimeout)
-      : ReplyEffect[Event, State] = {
-    Effect
-      .persist(
-        Failed(
-          state.status.marketId,
-          s"all messages consumed processing timeout[${state}]"))
-      .thenReply(command.replyTo)(_ => Accepted)
-  }
-
   private def createResultsConsumer(
       state: ClosedState,
-      command: CreateResultsConsumer,
-      timer: TimerScheduler[Command]): ReplyEffect[Event, State] = {
-    timer.startSingleTimer(
-      "lifespan",
-      ConsumerCreationTimeout(
-        10,
-        command.replyTo
-      ), // this would read from configuration
-      10.seconds)
+      command: CreateResultsConsumer): ReplyEffect[Event, State] = {
     Effect.none
-      .thenRun(
-        (_: State) =>
-          BetResultKafkaService
-            .sendAllMessagesConsumedPoisonPill(
-              state.status.marketId,
-              ALL_MESSAGES_CONSUMED_ID))
       .thenRun((_: State) =>
         BetResultKafkaService
-          .createConsumer(state.status.marketId, state.status.result))
+          .createConsumer(state.status.marketId, command.result))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
@@ -388,20 +364,12 @@ object Market {
       marketId: String,
       sharding: ClusterSharding): Future[Market.Response] = {
     val marketRef = sharding.entityRefFor(Market.typeKey, marketId)
-    marketRef.ask(Market.AllMessagesConsumed)
+    marketRef.ask(Market.AllMessagesConsumed).mapTo[Market.Response]
   }
 
   private def allMessagesConsumed(
       state: ClosedState,
-      command: AllMessagesConsumed,
-      timer: TimerScheduler[Command]): ReplyEffect[Closed, State] = {
-    timer.startSingleTimer(
-      "lifespan",
-      AllMessagesConsumedTimeout(
-        5,
-        command.replyTo
-      ), // this would read from configuration
-      5.seconds)
+      command: AllMessagesConsumed): ReplyEffect[Closed, State] = {
     Effect.none
       .thenRun((_: State) =>
         BetResultKafkaService.deleteTopic(state.status.marketId))

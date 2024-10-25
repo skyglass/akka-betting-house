@@ -34,8 +34,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 object Bet {
 
-  val ALL_MESSAGES_CONSUMED_ID = "all-messages-consumed-id"
-
   val logger = LoggerFactory.getLogger(Bet.getClass())
 
   val typeKey = EntityTypeKey[Command]("bet")
@@ -88,8 +86,6 @@ object Bet {
 
   sealed trait Response extends CborSerializable
   final case object Accepted extends Response
-
-  final case object AllBetsSettled extends Response
   final case class RequestUnaccepted(reason: String) extends Response
   final case class CurrentState(state: State) extends Response
 
@@ -381,20 +377,13 @@ object Bet {
 
   def requestBetSettlement(
       betId: String,
-      marketId: String,
       result: Int,
       sharding: ClusterSharding): Future[Bet.Response] = {
-
-    if (ALL_MESSAGES_CONSUMED_ID.equals(betId)) {
-      BetResultKafkaService.shutdownConsumer(marketId)
-      Future.successful(AllBetsSettled)
-    } else {
-      def auxSettle(result: Int)(
-          replyTo: ActorRef[Bet.Response]): Bet.Settle =
-        Bet.Settle(result, replyTo)
-      val betRef = sharding.entityRefFor(Bet.typeKey, betId)
-      betRef.ask(auxSettle(result)).mapTo[Bet.Response]
-    }
+    def auxSettle(result: Int)(
+        replyTo: ActorRef[Bet.Response]): Bet.Settle =
+      Bet.Settle(result, replyTo)
+    val betRef = sharding.entityRefFor(Bet.typeKey, betId)
+    betRef.ask(auxSettle(result)).mapTo[Bet.Response]
   }
 
   private def marketValidationFailed(
@@ -552,10 +541,14 @@ object Bet {
           Close(s"stake reimbursed to wallet [$walletRef]")
         case Failure(ex) => //I rather retry
           val message =
-            s"state NOT reimbursed to wallet [$walletRef]. Reason [${ex.getMessage}]"
+            s"stake NOT reimbursed to wallet [$walletRef]. Reason [${ex.getMessage}]"
           context.log.error(message)
           Fail(message)
       }
+    } else {
+      val message =
+        s"stake NOT reimbursed because bet result [${state.status.result}] is not equal to market result [${command.result}]"
+      context.log.debug(message)
     }
     Effect.none.thenReply(command.replyTo)(_ => Accepted)
   }
