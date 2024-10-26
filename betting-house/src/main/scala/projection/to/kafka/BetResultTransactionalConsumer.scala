@@ -90,6 +90,36 @@ class BetResultTransactionalConsumer(
                       log.error(message)
                   }
                 }
+              Bet
+                .requestBetSettlement(
+                  betProto.betId,
+                  marketResult,
+                  sharding)
+                .map { response =>
+                  response match {
+                    case Bet.Accepted =>
+                      log.warn(s"stake settled [${betProto.betId}]")
+                    case Bet.RequestUnaccepted(reason) =>
+                      val message =
+                        s"stake not settled [${betProto.betId}]. Reason [${reason}]"
+                      log.error(message)
+                  }
+                }
+              Bet
+                .requestBetSettlement(
+                  betProto.betId,
+                  marketResult,
+                  sharding)
+                .map { response =>
+                  response match {
+                    case Bet.Accepted =>
+                      log.warn(s"stake settled [${betProto.betId}]")
+                    case Bet.RequestUnaccepted(reason) =>
+                      val message =
+                        s"stake not settled [${betProto.betId}]. Reason [${reason}]"
+                      log.error(message)
+                  }
+                }
               log.debug(
                 s"Settle message: betId - ${betProto.betId}, marketId = ${marketId}, marketResult - ${marketResult}")
             }

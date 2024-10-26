@@ -22,7 +22,13 @@ import akka.stream.UniqueKillSwitch
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import akka.util.Timeout
-import example.betting.Market.State
+import example.betting.Market.{
+  Accepted,
+  ConsumerCreationFailure,
+  ConsumerCreationSuccess,
+  CreateResultsConsumer,
+  State
+}
 import org.apache.kafka.clients.admin.{
   AdminClient,
   DeleteConsumerGroupsOptions
@@ -123,6 +129,8 @@ object Bet {
 
   final case class ValidationsPassedState(override val status: Status)
       extends State(status)
+  final case class BetSettledState(override val status: Status)
+      extends State(status)
   final case class CancelledState(override val status: Status)
       extends State(status)
   final case class FailedState(
@@ -198,7 +206,7 @@ object Bet {
         validationsPassed(state)
       case (state: ValidationsPassedState, command: Settle) =>
         settle(state, command, sharding, context)
-      case (state: ValidationsPassedState, command: Close) =>
+      case (state: BetSettledState, command: Close) =>
         finish(state, command)
       case (state: State, command: GetState) =>
         getState(state, command.replyTo)
@@ -218,6 +226,11 @@ object Bet {
       extends Event
   final case class ValidationsPassed(betId: String, state: OpenState)
       extends Event
+  final case class BetSettled(
+      betId: String,
+      state: ValidationsPassedState)
+      extends Event
+
   final case class Opened(
       betId: String,
       walletId: String,
@@ -249,6 +262,8 @@ object Bet {
         state.copy(fundsConfirmed = Some(true))
       case ValidationsPassed(betId, state) =>
         ValidationsPassedState(state.status)
+      case BetSettled(betId, state) =>
+        BetSettledState(state.status)
       case Closed(betId) =>
         ClosedState(state.status)
       case Settled(betId) =>
@@ -523,34 +538,41 @@ object Bet {
 
   //one way to avoid adding funds twice is asking
   private def settle(
-      state: State,
+      state: ValidationsPassedState,
       command: Settle,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
-    implicit val timeout = Timeout(10, SECONDS)
 
-    def auxCreateRequest(stake: Int)(
-        replyTo: ActorRef[Wallet.Response]): Wallet.AddFunds =
-      Wallet.AddFunds(stake, replyTo)
+    Effect
+      .persist(BetSettled(state.status.betId, state))
+      .thenRun((_: State) => {
+        implicit val timeout = Timeout(10, SECONDS)
+        def auxCreateRequest(stake: Int)(
+            replyTo: ActorRef[Wallet.Response]): Wallet.AddFunds =
+          Wallet.AddFunds(stake, replyTo)
 
-    if (isWinner(state, command.result)) {
-      val walletRef =
-        sharding.entityRefFor(Wallet.typeKey, state.status.walletId)
-      context.ask(walletRef, auxCreateRequest(state.status.stake)) {
-        case Success(_) =>
-          Close(s"stake reimbursed to wallet [$walletRef]")
-        case Failure(ex) => //I rather retry
+        if (isWinner(state, command.result)) {
+          val walletRef =
+            sharding
+              .entityRefFor(Wallet.typeKey, state.status.walletId)
+          context
+            .ask(walletRef, auxCreateRequest(state.status.stake)) {
+              case Success(_) =>
+                Close(s"stake reimbursed to wallet [$walletRef]")
+              case Failure(ex) => //I rather retry
+                val message =
+                  s"stake NOT reimbursed to wallet [$walletRef]. Reason [${ex.getMessage}]"
+                context.log.error(message)
+                Fail(message)
+            }
+        } else {
           val message =
-            s"stake NOT reimbursed to wallet [$walletRef]. Reason [${ex.getMessage}]"
-          context.log.error(message)
-          Fail(message)
-      }
-    } else {
-      val message =
-        s"stake NOT reimbursed because bet result [${state.status.result}] is not equal to market result [${command.result}]"
-      context.log.debug(message)
-    }
-    Effect.none.thenReply(command.replyTo)(_ => Accepted)
+            s"stake NOT reimbursed because bet result [${state.status.result}] is not equal to market result [${command.result}]"
+          context.log.debug(message)
+        }
+
+      })
+      .thenReply(command.replyTo)(_ => Accepted)
   }
 
   private def fail(

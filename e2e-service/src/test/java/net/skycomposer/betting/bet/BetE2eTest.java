@@ -39,6 +39,7 @@ public class BetE2eTest extends E2eTest {
     @SneakyThrows
     void test() {
         String betId = UUID.randomUUID().toString();
+        String betId2 = UUID.randomUUID().toString();
         String walletId = UUID.randomUUID().toString();
         int walletBalance = 100;
         String marketId = UUID.randomUUID().toString();

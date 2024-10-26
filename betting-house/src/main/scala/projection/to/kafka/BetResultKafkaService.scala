@@ -120,6 +120,16 @@ object BetResultKafkaService {
           s"published event with betId [${state.status.betId}] to topic [$topic]}")
         Done
       }
+      producer.send(record).map { _ =>
+        log.warn(
+          s"published event with betId [${state.status.betId}] to topic [$topic]}")
+        Done
+      }
+      producer.send(record).map { _ =>
+        log.warn(
+          s"published event with betId [${state.status.betId}] to topic [$topic]}")
+        Done
+      }
       Future.successful(Done)
     } else {
       Future.successful(Done)
