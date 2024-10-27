@@ -1,5 +1,6 @@
 package example.betting
 
+import akka.Done
 import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
 import akka.actor.typed.scaladsl.{
   ActorContext,
@@ -17,7 +18,7 @@ import akka.persistence.typed.scaladsl.{
   RetentionCriteria
 }
 import akka.persistence.typed.PersistenceId
-import akka.stream.UniqueKillSwitch
+import akka.stream.{ RestartSettings, UniqueKillSwitch }
 
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
@@ -137,6 +138,12 @@ object Bet {
       override val status: Status,
       reason: String)
       extends State(status)
+
+  final case class FundReservationDeniedState(
+                                override val status: Status,
+                                reason: String,
+                                retries: Int)
+    extends State(status)
   private final case class MarketValidationFailedState(
       override val status: Status,
       reason: String)
@@ -147,33 +154,42 @@ object Bet {
   def apply(betId: String): Behavior[Command] = {
     Behaviors.withTimers { timers =>
       Behaviors
-        .setup[Command] { context =>
-          val sharding = ClusterSharding(context.system)
-          EventSourcedBehavior[Command, Event, State](
-            PersistenceId(typeKey.name, betId),
-            UninitializedState(Status.empty(betId)),
-            commandHandler = (state, command) =>
-              handleCommands(
-                state,
-                command,
-                sharding,
-                context,
-                timers),
-            eventHandler = handleEvents)
-            .withTagger {
-              case _ => Set(calculateTag(betId, tags))
-            }
-            .withRetention(
-              RetentionCriteria
-                .snapshotEvery(
-                  numberOfEvents = 100,
-                  keepNSnapshots = 2))
-            .onPersistFailure(
-              SupervisorStrategy.restartWithBackoff(
-                minBackoff = 10.seconds,
-                maxBackoff = 60.seconds,
-                randomFactor = 0.1))
-        }
+        .supervise(
+          Behaviors
+            .setup[Command] { context =>
+              val sharding = ClusterSharding(context.system)
+              EventSourcedBehavior[Command, Event, State](
+                PersistenceId(typeKey.name, betId),
+                UninitializedState(Status.empty(betId)),
+                commandHandler = (state, command) =>
+                  handleCommands(
+                    state,
+                    command,
+                    sharding,
+                    context,
+                    timers),
+                eventHandler = handleEvents)
+                .withTagger {
+                  case _ => Set(calculateTag(betId, tags))
+                }
+                .withRetention(
+                  RetentionCriteria
+                    .snapshotEvery(
+                      numberOfEvents = 100,
+                      keepNSnapshots = 2))
+                .onPersistFailure(
+                  SupervisorStrategy.restartWithBackoff(
+                    minBackoff = 10.seconds,
+                    maxBackoff = 60.seconds,
+                    randomFactor = 0.1))
+            })
+        .onFailure[IllegalStateException](
+          SupervisorStrategy
+            .restartWithBackoff(
+              minBackoff = 1.second,
+              maxBackoff = 10.seconds,
+              randomFactor = 0.1)
+            .withMaxRestarts(10))
     }
   }
 
@@ -246,6 +262,8 @@ object Bet {
       betId: String,
       reason: String)
       extends Event
+
+  final case class FundReservationDenied(betId: String, reason: String, retries: Int) extends Event
   final case class Failed(betId: String, reason: String) extends Event
   final case class Closed(betId: String) extends Event
 
@@ -260,6 +278,8 @@ object Bet {
         state.copy(marketConfirmed = Some(true))
       case FundsGranted(betId, state) =>
         state.copy(fundsConfirmed = Some(true))
+      case FundReservationDenied(betId, reason, retries) =>
+        FundReservationDeniedState(state.status, reason, retries + 1)
       case ValidationsPassed(betId, state) =>
         ValidationsPassedState(state.status)
       case BetSettled(betId, state) =>
@@ -284,8 +304,8 @@ object Bet {
       timers: TimerScheduler[Command]): ReplyEffect[Opened, State] = {
     timers.startSingleTimer(
       "lifespan",
-      ValidationsTimedOut(10), // this would read from configuration
-      10.seconds)
+      ValidationsTimedOut(60), // this would read from configuration
+      60.seconds)
     val open = Opened(
       state.status.betId,
       command.walletId,
@@ -352,6 +372,7 @@ object Bet {
       command: Open,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Unit = {
+
     val marketRef =
       sharding.entityRefFor(Market.typeKey, command.marketId)
 

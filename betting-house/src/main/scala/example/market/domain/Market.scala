@@ -150,33 +150,42 @@ object Market {
   def apply(marketId: String): Behavior[Command] =
     Behaviors.withTimers { timers =>
       Behaviors
-        .setup[Command] { context =>
-          val sharding = ClusterSharding(context.system)
-          EventSourcedBehavior[Command, Event, State](
-            PersistenceId(typeKey.name, marketId),
-            UninitializedState(Status.empty(marketId)),
-            commandHandler = (state, command) =>
-              handleCommands(
-                state,
-                command,
-                sharding,
-                context,
-                timers),
-            eventHandler = handleEvents)
-            .withTagger {
-              case _ => Set(calculateTag(marketId, tags))
-            }
-            .withRetention(
-              RetentionCriteria
-                .snapshotEvery(
-                  numberOfEvents = 100,
-                  keepNSnapshots = 2))
-            .onPersistFailure(
-              SupervisorStrategy.restartWithBackoff(
-                minBackoff = 10.seconds,
-                maxBackoff = 60.seconds,
-                randomFactor = 0.1))
-        }
+        .supervise(
+          Behaviors
+            .setup[Command] { context =>
+              val sharding = ClusterSharding(context.system)
+              EventSourcedBehavior[Command, Event, State](
+                PersistenceId(typeKey.name, marketId),
+                UninitializedState(Status.empty(marketId)),
+                commandHandler = (state, command) =>
+                  handleCommands(
+                    state,
+                    command,
+                    sharding,
+                    context,
+                    timers),
+                eventHandler = handleEvents)
+                .withTagger {
+                  case _ => Set(calculateTag(marketId, tags))
+                }
+                .withRetention(
+                  RetentionCriteria
+                    .snapshotEvery(
+                      numberOfEvents = 100,
+                      keepNSnapshots = 2))
+                .onPersistFailure(
+                  SupervisorStrategy.restartWithBackoff(
+                    minBackoff = 10.seconds,
+                    maxBackoff = 60.seconds,
+                    randomFactor = 0.1))
+            })
+        .onFailure[IllegalStateException](
+          SupervisorStrategy
+            .restartWithBackoff(
+              minBackoff = 1.second,
+              maxBackoff = 10.seconds,
+              randomFactor = 0.1)
+            .withMaxRestarts(10))
     }
 
   private def handleCommands(
@@ -315,7 +324,7 @@ object Market {
             case Success(_) =>
               val message =
                 s"Consumer creation success. Market [${state.status.marketId}]"
-              context.log.error(message)
+              context.log.debug(message)
               ConsumerCreationSuccess(command.replyTo)
             case Failure(ex) =>
               val message =

@@ -41,7 +41,7 @@ public class BetE2eTest extends E2eTest {
         String betId = UUID.randomUUID().toString();
         String betId2 = UUID.randomUUID().toString();
         String walletId = UUID.randomUUID().toString();
-        int walletBalance = 100;
+        int walletBalance = 0;
         String marketId = UUID.randomUUID().toString();
         int betStake = 100;
         double betOdds = 2.8;
@@ -56,6 +56,11 @@ public class BetE2eTest extends E2eTest {
         BetResponse betResponse = betTestHelper.createBet(betId, marketId, walletId, betStake, betOdds, betResult);
         assertThat(betResponse.getBetId(), equalTo(betId));
         assertThat(betResponse.getMessage(), equalTo("initialized"));
+
+        //Duplicate requests to make sure that opening the bet with the same id should be handled idempotently (only one bet open event should be handled, other duplicate events should be ignored)
+        betResponse = betTestHelper.createBet(betId, marketId, walletId, betStake, betOdds, betResult);
+        betResponse = betTestHelper.createBet(betId, marketId, walletId, betStake, betOdds, betResult);
+        betResponse = betTestHelper.createBet(betId, marketId, walletId, betStake, betOdds, betResult);
 
         BetData betData =  RetryHelper.retry(() ->  betTestHelper.getState(betId));
 

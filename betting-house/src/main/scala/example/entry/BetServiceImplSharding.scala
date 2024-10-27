@@ -5,11 +5,11 @@ import akka.cluster.sharding.typed.scaladsl.{
   ClusterSharding,
   Entity
 }
-
 import akka.util.Timeout
-import java.time.{ Instant, OffsetDateTime, ZoneId }
 
+import java.time.{ Instant, OffsetDateTime, ZoneId }
 import example.betting.Bet
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
@@ -21,6 +21,8 @@ class BetServiceImplSharding(sharding: ClusterSharding)
   implicit val timeout: Timeout = 6.seconds
   implicit val executionContext: ExecutionContext =
     ExecutionContext.global
+
+  implicit val log = LoggerFactory.getLogger(this.getClass)
 
   sharding.init(
     Entity(Bet.typeKey)(entityContext => Bet(entityContext.entityId)))
@@ -69,8 +71,11 @@ class BetServiceImplSharding(sharding: ClusterSharding)
           case Bet.Accepted =>
             example.bet.grpc.BetResponse("initialized")
           case Bet.RequestUnaccepted(reason) =>
+            val message =
+              s"Bet [${in.betId}] NOT opened because [$reason]"
+            log.error(message)
             example.bet.grpc
-              .BetResponse(s"Bet NOT opened because [$reason]")
+              .BetResponse(message)
         }
       }
   }

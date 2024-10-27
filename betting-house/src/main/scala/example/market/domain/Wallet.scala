@@ -1,8 +1,11 @@
 package example.betting
 
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
-
+import akka.cluster.sharding.typed.scaladsl.{
+  ClusterSharding,
+  EntityTypeKey
+}
 import akka.persistence.typed.scaladsl.{
   Effect,
   EventSourcedBehavior,
@@ -10,6 +13,7 @@ import akka.persistence.typed.scaladsl.{
   RetentionCriteria
 }
 import akka.persistence.typed.PersistenceId
+
 import scala.concurrent.duration._
 
 object Wallet {
@@ -42,25 +46,44 @@ object Wallet {
   final case class State(balance: Int) extends CborSerializable
 
   def apply(walletId: String): Behavior[Command] =
-    EventSourcedBehavior[Command, Event, State](
-      PersistenceId(typeKey.name, walletId),
-      State(0),
-      commandHandler = handleCommands,
-      eventHandler = handleEvents)
-      .withTagger {
-        case _ => Set(calculateTag(walletId, tags))
-      }
-      .withRetention(RetentionCriteria
-        .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 2))
-      .onPersistFailure(
-        SupervisorStrategy.restartWithBackoff(
-          minBackoff = 10.seconds,
-          maxBackoff = 60.seconds,
-          randomFactor = 0.1))
+    Behaviors
+      .supervise(
+        Behaviors
+          .setup[Command] { context =>
+            val sharding = ClusterSharding(context.system)
+            EventSourcedBehavior[Command, Event, State](
+              PersistenceId(typeKey.name, walletId),
+              State(0),
+              commandHandler = (state, command) =>
+                handleCommands(state, command, sharding, context),
+              eventHandler = handleEvents)
+              .withTagger {
+                case _ => Set(calculateTag(walletId, tags))
+              }
+              .withRetention(
+                RetentionCriteria
+                  .snapshotEvery(
+                    numberOfEvents = 100,
+                    keepNSnapshots = 2))
+              .onPersistFailure(
+                SupervisorStrategy.restartWithBackoff(
+                  minBackoff = 10.seconds,
+                  maxBackoff = 60.seconds,
+                  randomFactor = 0.1))
+          })
+      .onFailure[IllegalStateException](
+        SupervisorStrategy
+          .restartWithBackoff(
+            minBackoff = 1.second,
+            maxBackoff = 10.seconds,
+            randomFactor = 0.1)
+          .withMaxRestarts(10))
 
   def handleCommands(
       state: State,
-      command: Command): ReplyEffect[Event, State] = {
+      command: Command,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): ReplyEffect[Event, State] = {
     command match {
       case ReserveFunds(amount, replyTo) =>
         //it might need to check with an external service to
@@ -69,10 +92,13 @@ object Wallet {
           Effect
             .persist(FundsReserved(amount))
             .thenReply(replyTo)(state => Accepted)
-        else
+        else {
+          context.log.error(
+            s"funds reservation denied exception: amount [{$amount}]")
           Effect
             .persist(FundsReservationDenied(amount))
             .thenReply(replyTo)(state => Rejected)
+        }
       case AddFunds(amount, replyTo) =>
         Effect
           .persist(FundsAdded(amount))

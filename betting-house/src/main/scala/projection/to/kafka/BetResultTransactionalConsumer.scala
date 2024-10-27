@@ -51,7 +51,6 @@ class BetResultTransactionalConsumer(
     LoggerFactory.getLogger(classOf[BetResultTransactionalConsumer])
 
   def init(marketId: String, marketResult: Int): UniqueKillSwitch = {
-    // #transactionalFailureRetry
     val topic = s"bet-result-${marketId}"
     val groupId = topic
     val newTopic = new NewTopic(topic, 3, 3: Short)
@@ -86,7 +85,7 @@ class BetResultTransactionalConsumer(
                       log.warn(s"stake settled [${betProto.betId}]")
                     case Bet.RequestUnaccepted(reason) =>
                       val message =
-                        s"stake not settled [${betProto.betId}]. Reason [${reason}]"
+                        s"text exception stake not settled [${betProto.betId}]. Reason [${reason}]"
                       log.error(message)
                   }
                 }
@@ -101,7 +100,7 @@ class BetResultTransactionalConsumer(
                       log.warn(s"stake settled [${betProto.betId}]")
                     case Bet.RequestUnaccepted(reason) =>
                       val message =
-                        s"stake not settled [${betProto.betId}]. Reason [${reason}]"
+                        s"text exception stake not settled [${betProto.betId}]. Reason [${reason}]"
                       log.error(message)
                   }
                 }
@@ -116,7 +115,7 @@ class BetResultTransactionalConsumer(
                       log.warn(s"stake settled [${betProto.betId}]")
                     case Bet.RequestUnaccepted(reason) =>
                       val message =
-                        s"stake not settled [${betProto.betId}]. Reason [${reason}]"
+                        s"text exception stake not settled [${betProto.betId}]. Reason [${reason}]"
                       log.error(message)
                   }
                 }
