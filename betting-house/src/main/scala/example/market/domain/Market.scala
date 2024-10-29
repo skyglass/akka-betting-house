@@ -25,7 +25,6 @@ import example.betting.Bet.{
   Fail,
   Failed,
   FailedState,
-  HandleValidationsPassed,
   MarketStatusAvailable
 }
 import example.betting.Market.{
