@@ -127,7 +127,11 @@ object Bet {
   final case class OpenState(
       override val status: Status,
       marketConfirmed: Option[Boolean] = None,
-      fundsConfirmed: Option[Boolean] = None)
+      fundsConfirmed: Option[Boolean] = None,
+      fundReservationRetryCount: Int,
+      fundReservationMaxRetries: Int,
+      marketConfirmationRetryCount: Int,
+      marketConfirmationMaxRetries: Int)
       extends State(
         status
       ) // the ask user when market no longer available
@@ -145,13 +149,6 @@ object Bet {
       reason: String)
       extends State(status)
 
-  final case class FundReservationDeniedState(
-                                override val status: Status,
-                                reason: String,
-                                openState: OpenState,
-                                retryCount: Int,
-                                maxRetries: Int)
-    extends State(status)
   private final case class MarketValidationFailedState(
       override val status: Status,
       reason: String)
@@ -219,15 +216,11 @@ object Bet {
       case (state: OpenState, command: MarketStatusAvailable) =>
         validateMarket(state, command, sharding, context)
       case (state: OpenState, command: WalletFundsReservationResponded) =>
-        validateFunds(state, 1, 10, command, sharding, context)
+        validateFunds(state, command, sharding, context)
       case (state: OpenState, command: ValidationsTimedOut) =>
         checkValidationsAfterTimeout(state, sharding, context)
-      case (state: FundReservationDeniedState, command: RetryFundReservationRequest) =>
+      case (state: OpenState, command: RetryFundReservationRequest) =>
         retryFundsReservation(state, command, sharding, context)
-      case (state: FundReservationDeniedState, command: WalletFundsReservationResponded) =>
-        validateFunds(state.openState, state.retryCount, state.maxRetries, command, sharding, context)
-      case (state: FundReservationDeniedState, command: MarketStatusAvailable) =>
-        validateMarket(state.openState, command, sharding, context)
       case (state: ValidationsPassedState, command: ValidationsPassedRequest) =>
         validationsPassed(state, command)
       case (state: ValidationsPassedState, command: Settle) =>
@@ -275,7 +268,7 @@ object Bet {
       reason: String)
       extends Event
 
-  final case class FundReservationDenied(betId: String, reason: String, state: OpenState, retryCount: Int, maxRetries: Int) extends Event
+  final case class FundReservationDenied(betId: String, reason: String, state: OpenState) extends Event
   final case class Failed(betId: String, reason: String) extends Event
   final case class Closed(betId: String) extends Event
 
@@ -285,13 +278,14 @@ object Bet {
         OpenState(
           Status(betId, walletId, marketId, odds, stake, result),
           None,
-          None)
+          None,
+          1, 10, 1, 10)
       case MarketConfirmed(betId, state) =>
         state.copy(marketConfirmed = Some(true))
       case FundsGranted(betId, state) =>
         state.copy(fundsConfirmed = Some(true))
-      case FundReservationDenied(betId, reason, state, retryCount, maxRetries) =>
-        FundReservationDeniedState(state.status, reason, state, retryCount + 1, maxRetries)
+      case FundReservationDenied(betId, reason, state) =>
+        state.copy(fundReservationRetryCount = state.fundReservationRetryCount + 1)
       case ValidationsPassed(betId, state) =>
         ValidationsPassedState(state.status)
       case BetSettled(betId, state) =>
@@ -362,8 +356,6 @@ object Bet {
 
   private def validateFunds(
       state: OpenState,
-      retryCount: Int,
-      maxRetries: Int,
       command: WalletFundsReservationResponded,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
@@ -375,16 +367,22 @@ object Bet {
         }
         Effect.persist(FundsGranted(state.status.betId, state))
       case Wallet.Rejected =>
-        retryFundReservation(state, retryCount, maxRetries, sharding, context)
+        if (state.fundReservationRetryCount <= state.fundReservationMaxRetries) {
+          retryFundReservation(state, sharding, context)
+        } else {
+          Effect.persist(
+            Failed(state.status.betId, "funds not available"))
+        }
     }
   }
 
   private def retryFundsReservation(
-                             state: FundReservationDeniedState,
+                             state: OpenState,
                              command: RetryFundReservationRequest,
                              sharding: ClusterSharding,
                              context: ActorContext[Command]): Effect[Event, State] = {
-    Effect.none
+    Effect.persist(
+        FundReservationDenied(state.status.betId, "funds not available", state))
       .thenRun((_: State) => {
         requestFundsReservation(state.status.stake, state.status.walletId, sharding, context)
       })
@@ -393,12 +391,10 @@ object Bet {
 
   private def retryFundReservation(
                                    state: OpenState,
-                                   retryCount: Int,
-                                   maxRetries: Int,
                                    sharding: ClusterSharding,
                                    context: ActorContext[Command]): Effect[Event, State] = {
     Effect.persist(
-      FundReservationDenied(state.status.betId, "funds not available", state, retryCount, maxRetries))
+      FundReservationDenied(state.status.betId, "funds not available", state))
       .thenRun((_: State) => {
         val betRef =
           sharding.entityRefFor(Bet.typeKey, state.status.betId)
