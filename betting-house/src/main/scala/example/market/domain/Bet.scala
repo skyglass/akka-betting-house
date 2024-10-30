@@ -142,10 +142,10 @@ object Bet {
       override val status: Status,
       marketConfirmed: Option[Boolean] = None,
       fundsConfirmed: Option[Boolean] = None,
-      fundReservationRetryCount: Int,
-      fundReservationMaxRetries: Int,
-      marketConfirmationRetryCount: Int,
-      marketConfirmationMaxRetries: Int)
+      fundReservationRetryCount: Int = 1,
+      fundReservationMaxRetries: Int = 10,
+      marketConfirmationRetryCount: Int = 1,
+      marketConfirmationMaxRetries: Int = 10)
       extends State(
         status
       ) // the ask user when market no longer available
@@ -251,6 +251,8 @@ object Bet {
         finish(state, command)
       case (state: State, command: GetState) =>
         getState(state, command.replyTo)
+      case (state: FailedState, command: ValidationsTimedOut) =>
+        Effect.none
       case (_, command: ValidationsPassedResponse)    => Effect.none
       case (_, command: RetryFundReservationResponse) => Effect.none
       case (_, command: RetryMarketConfirmationResponse) =>
@@ -386,11 +388,10 @@ object Bet {
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
     if (!command.open) {
-      marketValidationFailed(
-        state,
-        s"market [${state.status.marketId}] is closed, no more bets allowed",
-        sharding,
-        context)
+      val message =
+        s"market [${state.status.marketId}] is closed, no more bets allowed"
+      context.log.error(message)
+      marketValidationFailed(state, message, sharding, context)
     } else if (command.oddsAvailable) {
       if (state.fundsConfirmed.getOrElse(false)) {
         requestValidationsPassed(state, sharding, context)
@@ -401,11 +402,10 @@ object Bet {
       if (state.marketConfirmationRetryCount <= state.marketConfirmationMaxRetries) {
         retryMarketConfirmation(state, sharding, context)
       } else {
-        marketValidationFailed(
-          state,
-          s"market odds [${command.marketOdds}] are less than the bet odds",
-          sharding,
-          context)
+        val message =
+          s"market odds [${command.marketOdds}] are less than the bet odds"
+        context.log.error(message)
+        marketValidationFailed(state, message, sharding, context)
       }
     }
   }
@@ -600,6 +600,8 @@ object Bet {
     command.response match {
       case Wallet.Accepted =>
         requestWalletRefund(state, sharding, context)
+      case Wallet.Rejected =>
+        Effect.none
     }
     Effect.none
   }
