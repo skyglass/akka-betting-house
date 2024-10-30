@@ -70,14 +70,28 @@ object Bet {
   final case class GetState(replyTo: ActorRef[Response])
       extends ReplyCommand
 
-  private final case class ValidationsPassedRequest(replyTo: ActorRef[Response])
+  private final case class ValidationsPassedRequest(
+      replyTo: ActorRef[Response])
       extends ReplyCommand
 
-  private final case class ValidationsPassedResponse(betId: String) extends Command
+  private final case class ValidationsPassedResponse(betId: String)
+      extends Command
 
-  private final case class RetryFundReservationRequest(replyTo: ActorRef[Response]) extends Command
+  private final case class RetryFundReservationRequest(
+      replyTo: ActorRef[Response])
+      extends Command
 
-  private final case class RetryFundReservationResponse(betId: String) extends Command
+  private final case class RetryFundReservationResponse(betId: String)
+      extends Command
+
+  private final case class RetryMarketConfirmationRequest(
+      replyTo: ActorRef[Response])
+      extends Command
+
+  private final case class RetryMarketConfirmationResponse(
+      betId: String)
+      extends Command
+
   private final case class MarketStatusAvailable(
       open: Boolean,
       oddsAvailable: Boolean,
@@ -215,13 +229,21 @@ object Bet {
         marketValidationFailed(state)
       case (state: OpenState, command: MarketStatusAvailable) =>
         validateMarket(state, command, sharding, context)
-      case (state: OpenState, command: WalletFundsReservationResponded) =>
+      case (
+          state: OpenState,
+          command: WalletFundsReservationResponded) =>
         validateFunds(state, command, sharding, context)
       case (state: OpenState, command: ValidationsTimedOut) =>
         checkValidationsAfterTimeout(state, sharding, context)
       case (state: OpenState, command: RetryFundReservationRequest) =>
         retryFundsReservation(state, command, sharding, context)
-      case (state: ValidationsPassedState, command: ValidationsPassedRequest) =>
+      case (
+          state: OpenState,
+          command: RetryMarketConfirmationRequest) =>
+        retryMarketConfirmation(state, command, sharding, context)
+      case (
+          state: ValidationsPassedState,
+          command: ValidationsPassedRequest) =>
         validationsPassed(state, command)
       case (state: ValidationsPassedState, command: Settle) =>
         settle(state, command, sharding, context)
@@ -229,8 +251,10 @@ object Bet {
         finish(state, command)
       case (state: State, command: GetState) =>
         getState(state, command.replyTo)
-      case (_, command: ValidationsPassedResponse) => Effect.none
+      case (_, command: ValidationsPassedResponse)    => Effect.none
       case (_, command: RetryFundReservationResponse) => Effect.none
+      case (_, command: RetryMarketConfirmationResponse) =>
+        Effect.none
       case (_, command: Cancel)       => cancel(state, command)
       case (_, command: ReplyCommand) => reject(state, command)
       case (_, command: Fail)         => fail(state, command)
@@ -268,7 +292,17 @@ object Bet {
       reason: String)
       extends Event
 
-  final case class FundReservationDenied(betId: String, reason: String, state: OpenState) extends Event
+  final case class FundReservationDenied(
+      betId: String,
+      reason: String,
+      state: OpenState)
+      extends Event
+
+  final case class MarketConfirmationDenied(
+      betId: String,
+      reason: String,
+      state: OpenState)
+      extends Event
   final case class Failed(betId: String, reason: String) extends Event
   final case class Closed(betId: String) extends Event
 
@@ -279,13 +313,20 @@ object Bet {
           Status(betId, walletId, marketId, odds, stake, result),
           None,
           None,
-          1, 10, 1, 10)
+          1,
+          10,
+          1,
+          10)
       case MarketConfirmed(betId, state) =>
         state.copy(marketConfirmed = Some(true))
       case FundsGranted(betId, state) =>
         state.copy(fundsConfirmed = Some(true))
       case FundReservationDenied(betId, reason, state) =>
-        state.copy(fundReservationRetryCount = state.fundReservationRetryCount + 1)
+        state.copy(fundReservationRetryCount =
+          state.fundReservationRetryCount + 1)
+      case MarketConfirmationDenied(betId, reason, state) =>
+        state.copy(marketConfirmationRetryCount =
+          state.marketConfirmationRetryCount + 1)
       case ValidationsPassed(betId, state) =>
         ValidationsPassedState(state.status)
       case BetSettled(betId, state) =>
@@ -321,10 +362,21 @@ object Bet {
       command.result)
     Effect
       .persist(open)
-      .thenRun((_: State) =>
-        requestMarketStatus(command, sharding, context))
-      .thenRun((_: State) =>
-        requestFundsReservation(command.stake, command.walletId, sharding, context))
+      .thenRun(
+        (_: State) =>
+          requestMarketStatus(
+            command.marketId,
+            command.odds,
+            command.result,
+            sharding,
+            context))
+      .thenRun(
+        (_: State) =>
+          requestFundsReservation(
+            command.stake,
+            command.walletId,
+            sharding,
+            context))
       .thenReply(command.replyTo)(_ => Accepted)
   }
 
@@ -346,11 +398,15 @@ object Bet {
         Effect.persist(MarketConfirmed(state.status.betId, state))
       }
     } else {
-      marketValidationFailed(
-        state,
-        s"market odds [${command.marketOdds}] are less than the bet odds",
-        sharding,
-        context)
+      if (state.marketConfirmationRetryCount <= state.marketConfirmationMaxRetries) {
+        retryMarketConfirmation(state, sharding, context)
+      } else {
+        marketValidationFailed(
+          state,
+          s"market odds [${command.marketOdds}] are less than the bet odds",
+          sharding,
+          context)
+      }
     }
   }
 
@@ -376,25 +432,16 @@ object Bet {
     }
   }
 
-  private def retryFundsReservation(
-                             state: OpenState,
-                             command: RetryFundReservationRequest,
-                             sharding: ClusterSharding,
-                             context: ActorContext[Command]): Effect[Event, State] = {
-    Effect.persist(
-        FundReservationDenied(state.status.betId, "funds not available", state))
-      .thenRun((_: State) => {
-        requestFundsReservation(state.status.stake, state.status.walletId, sharding, context)
-      })
-      .thenReply(command.replyTo)(_ => Accepted)
-  }
-
   private def retryFundReservation(
-                                   state: OpenState,
-                                   sharding: ClusterSharding,
-                                   context: ActorContext[Command]): Effect[Event, State] = {
-    Effect.persist(
-      FundReservationDenied(state.status.betId, "funds not available", state))
+      state: OpenState,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
+    Effect
+      .persist(
+        FundReservationDenied(
+          state.status.betId,
+          "funds not available",
+          state))
       .thenRun((_: State) => {
         val betRef =
           sharding.entityRefFor(Bet.typeKey, state.status.betId)
@@ -408,22 +455,80 @@ object Bet {
       })
   }
 
+  private def retryFundsReservation(
+      state: OpenState,
+      command: RetryFundReservationRequest,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
+    Effect.none
+      .thenRun((_: State) => {
+        requestFundsReservation(
+          state.status.stake,
+          state.status.walletId,
+          sharding,
+          context)
+      })
+      .thenReply(command.replyTo)(_ => Accepted)
+  }
+
+  private def retryMarketConfirmation(
+      state: OpenState,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
+    Effect
+      .persist(
+        MarketConfirmationDenied(
+          state.status.betId,
+          "market confirmation denied",
+          state))
+      .thenRun((_: State) => {
+        val betRef =
+          sharding.entityRefFor(Bet.typeKey, state.status.betId)
+        context.ask(betRef, RetryMarketConfirmationRequest) {
+          case Success(_) =>
+            RetryMarketConfirmationResponse(state.status.betId)
+          case Failure(ex) =>
+            context.log.error(ex.getMessage())
+            Fail(ex.getMessage())
+        }
+      })
+  }
+
+  private def retryMarketConfirmation(
+      state: OpenState,
+      command: RetryMarketConfirmationRequest,
+      sharding: ClusterSharding,
+      context: ActorContext[Command]): Effect[Event, State] = {
+    Effect.none
+      .thenRun((_: State) => {
+        requestMarketStatus(
+          state.status.marketId,
+          state.status.odds,
+          state.status.result,
+          sharding,
+          context)
+      })
+      .thenReply(command.replyTo)(_ => Accepted)
+  }
+
   //market changes very fast even if our system haven't register the
   //change we need to take this decision quickly. If the Market is not available
   // we fail fast.
   private def requestMarketStatus(
-      command: Open,
+      marketId: String,
+      odds: Double,
+      result: Int,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Unit = {
 
     val marketRef =
-      sharding.entityRefFor(Market.typeKey, command.marketId)
+      sharding.entityRefFor(Market.typeKey, marketId)
 
     implicit val timeout
         : Timeout = Timeout(3, SECONDS) //TODO read from properties
     context.ask(marketRef, Market.GetState) {
       case Success(Market.CurrentState(marketState)) =>
-        val matched = oddsDoMatch(marketState, command)
+        val matched = oddsDoMatch(marketState, odds, result)
         MarketStatusAvailable(
           marketState.open,
           matched.doMatch,
@@ -450,9 +555,7 @@ object Bet {
       context.messageAdapter(rsp =>
         WalletFundsReservationResponded(rsp))
 
-    walletRef ! Wallet.ReserveFunds(
-      stake,
-      walletResponseMapper)
+    walletRef ! Wallet.ReserveFunds(stake, walletResponseMapper)
   }
 
   def requestBetSettlement(
@@ -582,25 +685,24 @@ object Bet {
 
   private def oddsDoMatch(
       marketStatus: Market.Status,
-      command: Bet.Open): Match = {
+      odds: Double,
+      result: Int): Match = {
     // if better odds are available the betting house it takes the bet
     // for a lesser benefit to the betting customer. This is why compares
     // with gt
     logger.debug(
-      s"checking marketStatus $marketStatus matches requested odds ${command.odds}")
-    command.result match {
+      s"checking marketStatus $marketStatus matches requested odds ${odds}")
+    result match {
       case 0 =>
         Match(
-          marketStatus.odds.winHome >= command.odds,
+          marketStatus.odds.winHome >= odds,
           marketStatus.odds.winHome)
       case 1 =>
         Match(
-          marketStatus.odds.winAway >= command.odds,
+          marketStatus.odds.winAway >= odds,
           marketStatus.odds.winAway)
       case 2 =>
-        Match(
-          marketStatus.odds.draw >= command.odds,
-          marketStatus.odds.draw)
+        Match(marketStatus.odds.draw >= odds, marketStatus.odds.draw)
     }
   }
 
