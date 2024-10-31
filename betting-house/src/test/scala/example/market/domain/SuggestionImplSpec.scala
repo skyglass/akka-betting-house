@@ -114,7 +114,15 @@ class SuggestionImplSpec
 
         val expected = Bet.FailedState(
           Bet
-            .Status("betId1", "walletId1", "marketId1", 1.25, 100, 0),
+            .Status(
+              "betId1",
+              "walletId1",
+              "marketId1",
+              1.25,
+              100,
+              0,
+              false,
+              false),
           "market odds [Some(1.05)] not available")
 
         betProbe.expectMessage(Bet.CurrentState(expected))
@@ -174,7 +182,15 @@ class SuggestionImplSpec
 
         val expected = Bet.OpenState(
           Bet
-            .Status(betId, walletId, marketId, 1.25, 100, 0))
+            .Status(
+              betId,
+              walletId,
+              marketId,
+              1.25,
+              100,
+              0,
+              false,
+              false))
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
@@ -220,9 +236,15 @@ class SuggestionImplSpec
 
         val expected = Bet.OpenState(
           Bet
-            .Status(betId, walletId, marketId, 1.05, 100, 0),
-          Some(true),
-          Some(true))
+            .Status(
+              betId,
+              walletId,
+              marketId,
+              1.05,
+              100,
+              0,
+              true,
+              true))
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }

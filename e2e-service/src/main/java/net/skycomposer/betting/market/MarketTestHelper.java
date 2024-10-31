@@ -35,6 +35,19 @@ public class MarketTestHelper {
         return marketClient.open(marketData);
     }
 
+    public MarketResponse updateMarket(String marketId, double marketTieOdds) {
+        OddsData oddsData = OddsData.builder()
+                .winHome(1.5)
+                .winAway(3.5)
+                .tie(marketTieOdds)
+                .build();
+        MarketData marketData = MarketData.builder()
+                .marketId(marketId)
+                .odds(oddsData)
+                .build();
+        return marketClient.update(marketData);
+    }
+
     public MarketResponse closeMarket(String marketId, MarketData.Result result) {
         CloseMarketRequest closeMarketRequest = CloseMarketRequest
                 .builder()
@@ -42,6 +55,10 @@ public class MarketTestHelper {
                 .result(result.getValue())
                 .build();
         return marketClient.close(closeMarketRequest);
+    }
+
+    public MarketData getMarketData(String marketId) {
+        return marketClient.getState(marketId);
     }
 }
 

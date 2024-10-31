@@ -94,6 +94,8 @@ public class BettingGrpcClient {
                 .odds(grpcResponse.getOdds())
                 .stake(grpcResponse.getStake())
                 .result(grpcResponse.getResult())
+                .marketConfirmed(grpcResponse.getMarketConfirmed())
+                .fundsConfirmed(grpcResponse.getFundsConfirmed())
                 .build();
 
         return betData;

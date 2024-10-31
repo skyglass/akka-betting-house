@@ -18,5 +18,7 @@ public class BetData {
     private double odds;
     private int stake;
     private int result;
+    private boolean marketConfirmed;
+    private boolean fundsConfirmed;
 
 }

@@ -11,6 +11,8 @@ message Bet {
   double odds = 4;
   int32 stake = 5; 
   int32 result = 6;
+  bool marketConfirmed = 7;
+  bool fundsConfirmed = 8;
 }
 
 message SettleMessage {

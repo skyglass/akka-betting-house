@@ -113,7 +113,9 @@ class BetServiceImplSharding(sharding: ClusterSharding)
             status.marketId,
             status.odds,
             status.stake,
-            status.result)
+            status.result,
+            status.marketConfirmed,
+            status.fundsConfirmed)
       }
     }
   }

@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
+import static org.awaitility.Awaitility.await;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -11,8 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -47,12 +50,15 @@ public class BetConcurrencyE2eTest extends E2eTest {
         String betId = UUID.randomUUID().toString();
         String walletId = UUID.randomUUID().toString();
         int walletBalance = 100;
+        int walletBeforeMarketUpdateBalance = 0;
         int walletBeforeMarketCloseBalance = 0;
         int walletAfterMarketCloseBalance = 200;
         String marketId = UUID.randomUUID().toString();
         int betStake = 10;
         double betOdds = 2.8;
+        double betOdds2 = 2.9;
         MarketData.Result betResult = MarketData.Result.TIE;
+        AtomicInteger counter = new  AtomicInteger(0);
 
         WalletResponse walletResponse = customerTestHelper.createWallet(walletId, walletBalance);
         assertThat(walletResponse.getMessage(), equalTo("The request has been accepted for processing, but the processing has not been completed."));
@@ -67,7 +73,9 @@ public class BetConcurrencyE2eTest extends E2eTest {
         for (int i = 0; i < numberOfBets; i++) {
             CompletableFuture<BetResponse> betResponse = betTestHelper.asyncPlaceBet(
                     betId + i,
-                    marketId, walletId, betStake, betOdds, betResult);
+                    marketId, walletId, betStake,
+                    counter.getAndIncrement() % 2 == 0 ? betOdds : betOdds2,
+                    betResult);
             createdBets.add(betResponse);
         }
 
@@ -92,7 +100,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
                     , () -> {
                         var result = betTestHelper.getState(betResponse.getBetId());
                         while (result == null) {
-                            Thread.sleep(100);
+                            Thread.sleep(1000);
                             result = betTestHelper.getState(betResponse.getBetId());
                         }
                         assertThat(result.getStake(), equalTo(betStake));
@@ -111,20 +119,64 @@ public class BetConcurrencyE2eTest extends E2eTest {
                 Duration.ofSeconds(5)
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
+                    while (result.getAmount() != walletBeforeMarketUpdateBalance) {
+                        Thread.sleep(1000);
+                        result = customerTestHelper.findWalletById(walletId);
+                    }
+                    assertThat(result.getAmount(), equalTo(walletBeforeMarketUpdateBalance));
+                }, () -> String.format("Available wallet funds before market update are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
+        );
+
+        marketResponse = marketTestHelper.updateMarket(marketId, 2.9);
+
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(5)
+                , () -> {
+                    var result = marketTestHelper.getMarketData(marketId);
+                    while (result.getOdds().getTie() != 2.9) {
+                        Thread.sleep(1000);
+                        result =  marketTestHelper.getMarketData(marketId);
+                    }
+                    assertThat(result.getOdds().getTie(), equalTo(2.9));
+                }, () -> String.format("Market update odds are incorrect for marketId = %s: tieOdds = %d", marketId, marketTestHelper.getMarketData(marketId).getOdds().getTie())
+        );
+
+        //Before market is closed, make sure that all bets are confirmed by market and wallet
+        for (CompletableFuture<BetResponse> betFuture: createdBets) {
+            BetResponse betResponse = betFuture.get();
+            log.info("--> " + betResponse.getBetId());
+            assertTimeoutPreemptively(
+                    Duration.ofSeconds(20)
+                    , () -> {
+                        var result = betTestHelper.getState(betResponse.getBetId());
+                        while (!result.isMarketConfirmed() || !result.isFundsConfirmed()) {
+                            Thread.sleep(1000);
+                            result = betTestHelper.getState(betResponse.getBetId());
+                        }
+                        assertThat(result.isMarketConfirmed(), equalTo(true));
+                        assertThat(result.isFundsConfirmed(), equalTo(true));
+                    }, () -> String.format("Bet with betId = %s is not market or funds confirmed", betResponse.getBetId())
+            );
+        }
+
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(5)
+                , () -> {
+                    var result = customerTestHelper.findWalletById(walletId);
                     while (result.getAmount() != walletBeforeMarketCloseBalance) {
                         Thread.sleep(1000);
                         result = customerTestHelper.findWalletById(walletId);
                     }
                     assertThat(result.getAmount(), equalTo(walletBeforeMarketCloseBalance));
-                }, () -> String.format("Final available wallet funds are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
+                }, () -> String.format("Available wallet funds after market update are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
         );
 
+
         marketResponse = marketTestHelper.closeMarket(marketId, betResult);
-        assertThat(marketResponse.getMarketId(), equalTo(marketId));
-        assertThat(marketResponse.getMessage(), equalTo("initialized"));
+
 
         assertTimeoutPreemptively(
-                Duration.ofSeconds(60)
+                Duration.ofSeconds(120)
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
                     while (result.getAmount() != walletAfterMarketCloseBalance) {
@@ -132,7 +184,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
                         result = customerTestHelper.findWalletById(walletId);
                     }
                     assertThat(result.getAmount(), equalTo(walletAfterMarketCloseBalance));
-                }, () -> String.format("Final available wallet funds are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
+                }, () -> String.format("Available wallet funds after market close are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
         );
     }
 

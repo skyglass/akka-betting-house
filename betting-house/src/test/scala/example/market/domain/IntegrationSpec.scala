@@ -4,23 +4,17 @@ import akka.actor.testkit.typed.scaladsl.{
   LogCapturing,
   ScalaTestWithActorTestKit
 }
-
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.matchers.should.Matchers
-
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-
 import com.typesafe.config.ConfigFactory
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior }
-
 import akka.persistence.typed.scaladsl.{
   Effect,
   EventSourcedBehavior
 }
 import akka.persistence.typed.PersistenceId
-
 import akka.cluster.sharding.typed.scaladsl.{
   ClusterSharding,
   Entity,
@@ -28,9 +22,9 @@ import akka.cluster.sharding.typed.scaladsl.{
   EntityTypeKey
 }
 import akka.cluster.typed.{ Cluster, Join }
+import example.betting.Bet.OpenState
 
 import java.time.OffsetDateTime
-
 import scala.concurrent.duration._
 import org.scalatest.concurrent.Eventually
 
@@ -117,7 +111,15 @@ class IntegrationSpec
 
         val expected = Bet.FailedState(
           Bet
-            .Status("betId1", "walletId1", "marketId1", 1.26, 100, 0),
+            .Status(
+              "betId1",
+              "walletId1",
+              "marketId1",
+              1.26,
+              100,
+              0,
+              false,
+              false),
           "market odds [Some(1.25)] are less than the bet odds")
 
         betProbe.expectMessage(Bet.CurrentState(expected))
@@ -167,7 +169,15 @@ class IntegrationSpec
 
         val expected = Bet.OpenState(
           Bet
-            .Status(betId, walletId, marketId, 1.25, 100, 0))
+            .Status(
+              betId,
+              walletId,
+              marketId,
+              1.25,
+              100,
+              0,
+              true,
+              true))
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
@@ -216,9 +226,15 @@ class IntegrationSpec
 
         val expected = Bet.OpenState(
           Bet
-            .Status(betId, walletId, marketId, 1.05, 100, 0),
-          Some(true),
-          Some(true))
+            .Status(
+              betId,
+              walletId,
+              marketId,
+              1.05,
+              100,
+              0,
+              true,
+              true))
 
         betProbe.expectMessage(Bet.CurrentState(expected))
       }
@@ -271,7 +287,15 @@ class IntegrationSpec
 
         val expected = Bet.FailedState(
           Bet
-            .Status("betId4", "walletId4", "marketId4", 1.26, 100, 0),
+            .Status(
+              "betId4",
+              "walletId4",
+              "marketId4",
+              1.26,
+              100,
+              0,
+              true,
+              true),
           "market [marketId4] is closed, no more bets allowed")
 
         betProbe.expectMessage(Bet.CurrentState(expected))

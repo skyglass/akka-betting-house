@@ -46,7 +46,7 @@ import scala.util.{ Failure, Success }
 object Market {
 
   val typeKey = EntityTypeKey[Command]("market")
-  implicit val timeout: Timeout = 6.seconds
+  implicit val timeout: Timeout = 12.seconds
 
   final case class Fixture(
       id: String,
@@ -95,11 +95,6 @@ object Market {
       extends Command
 
   final case class AllMessagesConsumed(replyTo: ActorRef[Response])
-      extends Command
-
-  private final case class AllMessagesConsumedTimeout(
-      seconds: Int,
-      replyTo: ActorRef[Response])
       extends Command
 
   final case class Close(

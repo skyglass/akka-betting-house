@@ -115,11 +115,21 @@ object Bet {
       marketId: String,
       odds: Double,
       stake: Int,
-      result: Int)
+      result: Int,
+      marketConfirmed: Boolean,
+      fundsConfirmed: Boolean)
       extends CborSerializable
   object Status {
     def empty(betId: String) =
-      Status(betId, "uninitialized", "uninitialized", -1, -1, 0)
+      Status(
+        betId,
+        "uninitialized",
+        "uninitialized",
+        -1,
+        -1,
+        0,
+        false,
+        false)
   }
 
   sealed trait StatusState extends CborSerializable {
@@ -132,8 +142,6 @@ object Bet {
       extends State(status)
   final case class OpenState(
       override val status: Status,
-      marketConfirmed: Option[Boolean] = None,
-      fundsConfirmed: Option[Boolean] = None,
       fundReservationRetryCount: Int = 1,
       fundReservationMaxRetries: Int = 10,
       marketConfirmationRetryCount: Int = 1,
@@ -295,17 +303,23 @@ object Bet {
     event match {
       case Opened(betId, walletId, marketId, odds, stake, result) =>
         OpenState(
-          Status(betId, walletId, marketId, odds, stake, result),
-          None,
-          None,
+          Status(
+            betId,
+            walletId,
+            marketId,
+            odds,
+            stake,
+            result,
+            false,
+            false),
           1,
           10,
           1,
           10)
       case MarketConfirmed(betId, state) =>
-        state.copy(marketConfirmed = Some(true))
+        state.copy(status = state.status.copy(marketConfirmed = true))
       case FundsGranted(betId, state) =>
-        state.copy(fundsConfirmed = Some(true))
+        state.copy(status = state.status.copy(fundsConfirmed = true))
       case FundReservationDenied(betId, reason, state) =>
         state.copy(fundReservationRetryCount =
           state.fundReservationRetryCount + 1)
@@ -336,8 +350,8 @@ object Bet {
       timer: TimerScheduler[Command]): ReplyEffect[Opened, State] = {
     timer.startSingleTimer(
       "lifespan",
-      ValidationsTimedOut(60), // this would read from configuration
-      60.seconds)
+      ValidationsTimedOut(180), // this would read from configuration
+      180.seconds)
     val open = Opened(
       state.status.betId,
       command.walletId,
@@ -377,7 +391,7 @@ object Bet {
       context.log.error(message)
       marketValidationFailed(state, message, sharding, context)
     } else if (command.oddsAvailable) {
-      if (state.fundsConfirmed.getOrElse(false)) {
+      if (state.status.fundsConfirmed) {
         requestValidationsPassed(state, sharding, context)
       } else {
         Effect.persist(MarketConfirmed(state.status.betId, state))
@@ -400,7 +414,7 @@ object Bet {
       sharding: ClusterSharding,
       context: ActorContext[Command],
       timer: TimerScheduler[Command]): Effect[Event, State] = {
-    val marketConfirmed = state.marketConfirmed.getOrElse(false);
+    val marketConfirmed = state.status.marketConfirmed;
     command.response match {
       case Wallet.Accepted =>
         if (marketConfirmed) {
@@ -423,8 +437,8 @@ object Bet {
       timer: TimerScheduler[Command]): Effect[Event, State] = {
     timer.startSingleTimer(
       s"retry-fund-reservation",
-      RetryFundReservationRequest(2),
-      2.seconds)
+      RetryFundReservationRequest(3),
+      3.seconds)
     Effect
       .persist(
         FundReservationDenied(
@@ -453,8 +467,8 @@ object Bet {
       timer: TimerScheduler[Command]): Effect[Event, State] = {
     timer.startSingleTimer(
       s"retry-market-confirmation",
-      RetryMarketConfirmationRequest(2),
-      2.seconds)
+      RetryMarketConfirmationRequest(3),
+      3.seconds)
     Effect
       .persist(
         MarketConfirmationDenied(
@@ -493,7 +507,7 @@ object Bet {
       sharding.entityRefFor(Market.typeKey, marketId)
 
     implicit val timeout
-        : Timeout = Timeout(3, SECONDS) //TODO read from properties
+        : Timeout = Timeout(6, SECONDS) //TODO read from properties
     context.ask(marketRef, Market.GetState) {
       case Success(Market.CurrentState(marketState)) =>
         val matched = oddsDoMatch(marketState, odds, result)
@@ -559,8 +573,8 @@ object Bet {
       state: OpenState,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
-    (state.fundsConfirmed) match {
-      case (Some(true)) =>
+    (state.status.fundsConfirmed) match {
+      case (true) =>
         requestWalletRefund(state, sharding, context)
       case (_) =>
         Effect.none
@@ -603,16 +617,16 @@ object Bet {
       state: OpenState,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
-    (state.marketConfirmed, state.fundsConfirmed) match {
-      case (Some(true), Some(true)) =>
+    (state.status.marketConfirmed, state.status.fundsConfirmed) match {
+      case (true, true) =>
         requestValidationsPassed(state, sharding, context)
-      case (_, Some(true)) =>
+      case (_, true) =>
         marketValidationFailed(
           state,
           s"market validation failed (timeout) [${state}]",
           sharding,
           context)
-      case (Some(true), _) =>
+      case (true, _) =>
         fundReservationFailed(
           state,
           s"fund reservation failed (timeout) [${state}]")

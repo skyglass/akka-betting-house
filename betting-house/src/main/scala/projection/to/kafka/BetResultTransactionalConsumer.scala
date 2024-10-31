@@ -85,37 +85,7 @@ class BetResultTransactionalConsumer(
                       log.warn(s"stake settled [${betProto.betId}]")
                     case Bet.RequestUnaccepted(reason) =>
                       val message =
-                        s"text exception stake not settled [${betProto.betId}]. Reason [${reason}]"
-                      log.error(message)
-                  }
-                }
-              Bet
-                .requestBetSettlement(
-                  betProto.betId,
-                  marketResult,
-                  sharding)
-                .map { response =>
-                  response match {
-                    case Bet.Accepted =>
-                      log.warn(s"stake settled [${betProto.betId}]")
-                    case Bet.RequestUnaccepted(reason) =>
-                      val message =
-                        s"text exception stake not settled [${betProto.betId}]. Reason [${reason}]"
-                      log.error(message)
-                  }
-                }
-              Bet
-                .requestBetSettlement(
-                  betProto.betId,
-                  marketResult,
-                  sharding)
-                .map { response =>
-                  response match {
-                    case Bet.Accepted =>
-                      log.warn(s"stake settled [${betProto.betId}]")
-                    case Bet.RequestUnaccepted(reason) =>
-                      val message =
-                        s"text exception stake not settled [${betProto.betId}]. Reason [${reason}]"
+                        s"stake not settled [${betProto.betId}]. Reason [${reason}]"
                       log.error(message)
                   }
                 }

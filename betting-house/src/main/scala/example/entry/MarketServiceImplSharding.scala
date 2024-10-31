@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 class MarketServiceImplSharding(implicit sharding: ClusterSharding)
     extends MarketService {
 
-  implicit val timeout: Timeout = 3.seconds
+  implicit val timeout: Timeout = 30.seconds
   implicit val executionContext: ExecutionContext =
     ExecutionContext.global
 
