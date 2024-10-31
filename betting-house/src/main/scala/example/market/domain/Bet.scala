@@ -548,7 +548,9 @@ object Bet {
         checkRequestWalletRefund(state, sharding, context))
   }
 
-  private def fundReservationFailed(state: OpenState, reason: String): Effect[Event, State] = {
+  private def fundReservationFailed(
+      state: OpenState,
+      reason: String): Effect[Event, State] = {
     Effect
       .persist(Failed(state.status.betId, reason))
   }
