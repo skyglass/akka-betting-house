@@ -130,7 +130,7 @@ public class BetE2eTest extends E2eTest {
         assertThat(marketResponse.getMessage(), equalTo("initialized"));
 
         assertTimeoutPreemptively(
-                Duration.ofSeconds(60)
+                Duration.ofSeconds(10)
                 , () -> {
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
                     while (walletData.getAmount() != 100) {

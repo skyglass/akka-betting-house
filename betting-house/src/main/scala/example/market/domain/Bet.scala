@@ -77,19 +77,11 @@ object Bet {
   private final case class ValidationsPassedResponse(betId: String)
       extends Command
 
-  private final case class RetryFundReservationRequest(
-      replyTo: ActorRef[Response])
-      extends Command
-
-  private final case class RetryFundReservationResponse(betId: String)
+  private final case class RetryFundReservationRequest(seconds: Int)
       extends Command
 
   private final case class RetryMarketConfirmationRequest(
-      replyTo: ActorRef[Response])
-      extends Command
-
-  private final case class RetryMarketConfirmationResponse(
-      betId: String)
+      seconds: Int)
       extends Command
 
   private final case class MarketStatusAvailable(
@@ -163,10 +155,6 @@ object Bet {
       reason: String)
       extends State(status)
 
-  private final case class MarketValidationFailedState(
-      override val status: Status,
-      reason: String)
-      extends State(status)
   final case class ClosedState(override val status: Status)
       extends State(status)
 
@@ -221,22 +209,20 @@ object Bet {
     (state, command) match {
       case (state: UninitializedState, command: Open) =>
         open(state, command, sharding, context, timer)
-      case (
-          state: MarketValidationFailedState,
-          command: WalletFundsReservationResponded) =>
-        requestWalletRefund(state, command, sharding, context)
-      case (state: MarketValidationFailedState, _) =>
-        marketValidationFailed(state)
       case (state: OpenState, command: MarketStatusAvailable) =>
-        validateMarket(state, command, sharding, context)
+        validateMarket(state, command, sharding, context, timer)
       case (
           state: OpenState,
           command: WalletFundsReservationResponded) =>
-        validateFunds(state, command, sharding, context)
+        validateFunds(state, command, sharding, context, timer)
+      case (
+          state: FailedState,
+          command: WalletFundsReservationResponded) =>
+        requestWalletRefund(state, command, sharding, context)
       case (state: OpenState, command: ValidationsTimedOut) =>
         checkValidationsAfterTimeout(state, sharding, context)
       case (state: OpenState, command: RetryFundReservationRequest) =>
-        retryFundsReservation(state, command, sharding, context)
+        retryFundReservation(state, command, sharding, context)
       case (
           state: OpenState,
           command: RetryMarketConfirmationRequest) =>
@@ -253,14 +239,11 @@ object Bet {
         getState(state, command.replyTo)
       case (state: FailedState, command: ValidationsTimedOut) =>
         Effect.none
-      case (_, command: ValidationsPassedResponse)    => Effect.none
-      case (_, command: RetryFundReservationResponse) => Effect.none
-      case (_, command: RetryMarketConfirmationResponse) =>
-        Effect.none
-      case (_, command: Cancel)       => cancel(state, command)
-      case (_, command: ReplyCommand) => reject(state, command)
-      case (_, command: Fail)         => fail(state, command)
-      case _                          => invalid(state, command, context)
+      case (_, command: ValidationsPassedResponse) => Effect.none
+      case (_, command: Cancel)                    => cancel(state, command)
+      case (_, command: ReplyCommand)              => reject(state, command)
+      case (_, command: Fail)                      => fail(state, command)
+      case _                                       => invalid(state, command, context)
     }
   }
 
@@ -340,7 +323,7 @@ object Bet {
       case Cancelled(betId, reason) =>
         CancelledState(state.status)
       case MarketValidationFailed(_, reason) =>
-        MarketValidationFailedState(state.status, reason)
+        FailedState(state.status, reason)
       case Failed(_, reason) =>
         FailedState(state.status, reason)
     }
@@ -350,8 +333,8 @@ object Bet {
       command: Open,
       sharding: ClusterSharding,
       context: ActorContext[Command],
-      timers: TimerScheduler[Command]): ReplyEffect[Opened, State] = {
-    timers.startSingleTimer(
+      timer: TimerScheduler[Command]): ReplyEffect[Opened, State] = {
+    timer.startSingleTimer(
       "lifespan",
       ValidationsTimedOut(60), // this would read from configuration
       60.seconds)
@@ -386,7 +369,8 @@ object Bet {
       state: OpenState,
       command: MarketStatusAvailable,
       sharding: ClusterSharding,
-      context: ActorContext[Command]): Effect[Event, State] = {
+      context: ActorContext[Command],
+      timer: TimerScheduler[Command]): Effect[Event, State] = {
     if (!command.open) {
       val message =
         s"market [${state.status.marketId}] is closed, no more bets allowed"
@@ -400,7 +384,7 @@ object Bet {
       }
     } else {
       if (state.marketConfirmationRetryCount <= state.marketConfirmationMaxRetries) {
-        retryMarketConfirmation(state, sharding, context)
+        retryMarketConfirmation(state, timer)
       } else {
         val message =
           s"market odds [${command.marketOdds}] are less than the bet odds"
@@ -414,7 +398,8 @@ object Bet {
       state: OpenState,
       command: WalletFundsReservationResponded,
       sharding: ClusterSharding,
-      context: ActorContext[Command]): Effect[Event, State] = {
+      context: ActorContext[Command],
+      timer: TimerScheduler[Command]): Effect[Event, State] = {
     val marketConfirmed = state.marketConfirmed.getOrElse(false);
     command.response match {
       case Wallet.Accepted =>
@@ -424,7 +409,7 @@ object Bet {
         Effect.persist(FundsGranted(state.status.betId, state))
       case Wallet.Rejected =>
         if (state.fundReservationRetryCount <= state.fundReservationMaxRetries) {
-          retryFundReservation(state, sharding, context)
+          retryFundReservation(state, timer)
         } else {
           Effect.persist(
             Failed(state.status.betId, "funds not available"))
@@ -434,28 +419,20 @@ object Bet {
 
   private def retryFundReservation(
       state: OpenState,
-      sharding: ClusterSharding,
-      context: ActorContext[Command]): Effect[Event, State] = {
+      timer: TimerScheduler[Command]): Effect[Event, State] = {
+    timer.startSingleTimer(
+      s"retry-fund-reservation",
+      RetryFundReservationRequest(2),
+      2.seconds)
     Effect
       .persist(
         FundReservationDenied(
           state.status.betId,
           "funds not available",
           state))
-      .thenRun((_: State) => {
-        val betRef =
-          sharding.entityRefFor(Bet.typeKey, state.status.betId)
-        context.ask(betRef, RetryFundReservationRequest) {
-          case Success(_) =>
-            RetryFundReservationResponse(state.status.betId)
-          case Failure(ex) =>
-            context.log.error(ex.getMessage())
-            Fail(ex.getMessage())
-        }
-      })
   }
 
-  private def retryFundsReservation(
+  private def retryFundReservation(
       state: OpenState,
       command: RetryFundReservationRequest,
       sharding: ClusterSharding,
@@ -468,30 +445,21 @@ object Bet {
           sharding,
           context)
       })
-      .thenReply(command.replyTo)(_ => Accepted)
   }
 
   private def retryMarketConfirmation(
       state: OpenState,
-      sharding: ClusterSharding,
-      context: ActorContext[Command]): Effect[Event, State] = {
+      timer: TimerScheduler[Command]): Effect[Event, State] = {
+    timer.startSingleTimer(
+      s"retry-market-confirmation",
+      RetryMarketConfirmationRequest(2),
+      2.seconds)
     Effect
       .persist(
         MarketConfirmationDenied(
           state.status.betId,
           "market confirmation denied",
           state))
-      .thenRun((_: State) => {
-        val betRef =
-          sharding.entityRefFor(Bet.typeKey, state.status.betId)
-        context.ask(betRef, RetryMarketConfirmationRequest) {
-          case Success(_) =>
-            RetryMarketConfirmationResponse(state.status.betId)
-          case Failure(ex) =>
-            context.log.error(ex.getMessage())
-            Fail(ex.getMessage())
-        }
-      })
   }
 
   private def retryMarketConfirmation(
@@ -508,7 +476,6 @@ object Bet {
           sharding,
           context)
       })
-      .thenReply(command.replyTo)(_ => Accepted)
   }
 
   //market changes very fast even if our system haven't register the
@@ -676,11 +643,6 @@ object Bet {
             Fail(ex.getMessage())
         }
       })
-  }
-
-  private def marketValidationFailed(
-      state: MarketValidationFailedState): Effect[Event, State] = {
-    Effect.persist(Failed(state.status.betId, state.reason))
   }
 
   private final case class Match(doMatch: Boolean, marketOdds: Double)
