@@ -411,8 +411,9 @@ object Bet {
         if (state.fundReservationRetryCount <= state.fundReservationMaxRetries) {
           retryFundReservation(state, timer)
         } else {
-          Effect.persist(
-            Failed(state.status.betId, "funds not available"))
+          fundReservationFailed(
+            state,
+            s"fund reservation failed [${state}]")
         }
     }
   }
@@ -547,6 +548,11 @@ object Bet {
         checkRequestWalletRefund(state, sharding, context))
   }
 
+  private def fundReservationFailed(state: OpenState, reason: String): Effect[Event, State] = {
+    Effect
+      .persist(Failed(state.status.betId, reason))
+  }
+
   private def checkRequestWalletRefund(
       state: OpenState,
       sharding: ClusterSharding,
@@ -605,11 +611,9 @@ object Bet {
           sharding,
           context)
       case (Some(true), _) =>
-        marketValidationFailed(
+        fundReservationFailed(
           state,
-          s"funds reservation failed (timeout) [${state}]",
-          sharding,
-          context)
+          s"fund reservation failed (timeout) [${state}]")
       case _ =>
         Effect.persist(
           Failed(
