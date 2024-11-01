@@ -99,11 +99,11 @@ public class BetConcurrencyE2eTest extends E2eTest {
                     , () -> {
                         var result = betTestHelper.getState(betResponse.getBetId());
                         while (result == null) {
-                            Thread.sleep(100);
+                            Thread.sleep(200);
                             result = betTestHelper.getState(betResponse.getBetId());
                         }
                         assertThat(result.getStake(), equalTo(betStake));
-                        Thread.sleep(100);
+                        Thread.sleep(200);
                     }, () -> "Can't find the bet with betId = " + betResponse.getBetId()
             );
         }
@@ -180,6 +180,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
                     while (result.getAmount() != walletAfterMarketCloseBalance) {
+                        log.info("--> " + result.getAmount());
                         Thread.sleep(2000);
                         result = customerTestHelper.findWalletById(walletId);
                     }
