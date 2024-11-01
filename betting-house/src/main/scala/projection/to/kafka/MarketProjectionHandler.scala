@@ -19,7 +19,6 @@ import example.betting.Market
 import betting.house.projection
 
 class MarketProjectionHandler(
-    system: ActorSystem[_],
     topic: String,
     producer: SendProducer[String, Array[Byte]])
     extends Handler[EventEnvelope[Market.Event]] {
@@ -58,7 +57,7 @@ class MarketProjectionHandler(
         log.info(s"ignoring event $x in projection")
         Empty.defaultInstance
     }
-    PbAny.pack(proto, "market-projection").toByteArray
+    PbAny.pack(proto, topic).toByteArray
   }
 
 }

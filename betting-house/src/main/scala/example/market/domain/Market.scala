@@ -131,7 +131,7 @@ object Market {
         Odds(-1, -1, -1),
         0,
         true,
-        0)
+        0L)
   }
   final case class UninitializedState(status: Status) extends State
   final case class OpenState(status: Status) extends State
@@ -249,7 +249,8 @@ object Market {
           odds.getOrElse(state.status.odds),
           state.status.result,
           state.status.open,
-          opensAt.getOrElse(state.status.opensAt)))
+          //TODO: conversion from java.lang.Long to scala.Long doesn't work, temporarily disabled until further research (market open date is not used anywhere yet)
+          state.status.opensAt))
       case (state: OpenState, Closed(_, result, _)) =>
         ClosedState(state.status.copy(result = result, open = false))
       case (state: ClosedState, ConsumerCreated(_)) =>

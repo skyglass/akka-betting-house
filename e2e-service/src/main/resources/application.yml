@@ -7,7 +7,7 @@ spring:
       client:
         config:
           default:
-            readTimeout: 20000
+            readTimeout: 30000
             connectTimeout: 30000
           customer:
             url: http://localhost/customer

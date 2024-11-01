@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 option java_package = "betting.house.projection.proto";
-option java_outer_classname = "BetProjectionProto";
 
 
 message MarketIdsBet {
@@ -17,4 +16,91 @@ message SumStake{
 
 service BetProjectionService {
 	rpc GetBetByMarket(MarketIdsBet) returns (SumStakes) {}
+}
+
+message Status {
+	string betId = 1;
+	string walletId = 2;
+	string marketId = 3;
+	double odds = 4;
+	int32 stake = 5;
+	int32 result = 6;
+	bool marketConfirmed = 7;
+	bool fundsConfirmed = 8;
+}
+
+message OpenState {
+	Status status = 1;
+	int32 fundReservationCount = 2;
+	int32 fundReservationMaxRetries = 3;
+	int32 marketConfirmationRetryCount = 4;
+	int32 marketConfirmationMaxRetries = 5;
+}
+
+message BetSettledState {
+	Status status = 2;
+}
+
+message ValidationsPassedState {
+	Status status = 2;
+}
+
+message MarketConfirmed {
+	string betId = 1;
+	OpenState state = 2;
+}
+
+message FundsGranted {
+	string betId = 1;
+	OpenState state = 2;
+}
+
+message ValidationsPassed {
+	string betId = 1;
+	OpenState state = 2;
+}
+
+message BetSettled {
+	string betId = 1;
+	ValidationsPassedState state = 2;
+}
+
+message Opened {
+	string betId = 1;
+	string walletId = 2;
+	string marketId = 3;
+	double odds = 4;
+	int32 stake = 5;
+	int32 result = 6;
+}
+
+message Cancelled {
+	string betId = 1;
+	string reason = 2;
+}
+
+message MarketValidationFailed {
+	string betId = 1;
+	string reason = 2;
+}
+
+message FundReservationDenied {
+	string betId = 1;
+	string reason = 2;
+	OpenState state = 3;
+}
+
+message MarketConfirmationDenied {
+	string betId = 1;
+	string reason = 2;
+	OpenState state = 3;
+}
+
+message Failed {
+	string betId = 1;
+	string reason = 2;
+}
+
+message Closed {
+	string betId = 1;
 }

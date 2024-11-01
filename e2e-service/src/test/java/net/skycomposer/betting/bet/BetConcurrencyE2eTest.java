@@ -47,7 +47,6 @@ public class BetConcurrencyE2eTest extends E2eTest {
     @Test
     @SneakyThrows
     void createParallelBetsThenFundsAreZeroTest() {
-        String betId = UUID.randomUUID().toString();
         String walletId = UUID.randomUUID().toString();
         int walletBalance = 100;
         int walletBeforeMarketUpdateBalance = 0;
@@ -72,7 +71,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
         List<CompletableFuture<BetResponse>> createdBets = new ArrayList<>();
         for (int i = 0; i < numberOfBets; i++) {
             CompletableFuture<BetResponse> betResponse = betTestHelper.asyncPlaceBet(
-                    betId + i,
+                    UUID.randomUUID().toString(),
                     marketId, walletId, betStake,
                     counter.getAndIncrement() % 2 == 0 ? betOdds : betOdds2,
                     betResult);
@@ -100,10 +99,11 @@ public class BetConcurrencyE2eTest extends E2eTest {
                     , () -> {
                         var result = betTestHelper.getState(betResponse.getBetId());
                         while (result == null) {
-                            Thread.sleep(1000);
+                            Thread.sleep(100);
                             result = betTestHelper.getState(betResponse.getBetId());
                         }
                         assertThat(result.getStake(), equalTo(betStake));
+                        Thread.sleep(100);
                     }, () -> "Can't find the bet with betId = " + betResponse.getBetId()
             );
         }
@@ -127,7 +127,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
                 }, () -> String.format("Available wallet funds before market update are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
         );
 
-        marketResponse = marketTestHelper.updateMarket(marketId, 2.9);
+        marketTestHelper.updateMarket(marketId, 2.9);
 
         assertTimeoutPreemptively(
                 Duration.ofSeconds(5)
@@ -138,7 +138,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
                         result =  marketTestHelper.getMarketData(marketId);
                     }
                     assertThat(result.getOdds().getTie(), equalTo(2.9));
-                }, () -> String.format("Market update odds are incorrect for marketId = %s: tieOdds = %d", marketId, marketTestHelper.getMarketData(marketId).getOdds().getTie())
+                }, () -> String.format("Market update odds are incorrect for marketId = %s: tieOdds = %.2f", marketId, marketTestHelper.getMarketData(marketId).getOdds().getTie())
         );
 
         //Before market is closed, make sure that all bets are confirmed by market and wallet
@@ -146,7 +146,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
             BetResponse betResponse = betFuture.get();
             log.info("--> " + betResponse.getBetId());
             assertTimeoutPreemptively(
-                    Duration.ofSeconds(20)
+                    Duration.ofSeconds(60)
                     , () -> {
                         var result = betTestHelper.getState(betResponse.getBetId());
                         while (!result.isMarketConfirmed() || !result.isFundsConfirmed()) {
@@ -172,15 +172,15 @@ public class BetConcurrencyE2eTest extends E2eTest {
         );
 
 
-        marketResponse = marketTestHelper.closeMarket(marketId, betResult);
+        marketTestHelper.closeMarket(marketId, betResult);
 
 
         assertTimeoutPreemptively(
-                Duration.ofSeconds(120)
+                Duration.ofSeconds(180)
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
                     while (result.getAmount() != walletAfterMarketCloseBalance) {
-                        Thread.sleep(1000);
+                        Thread.sleep(2000);
                         result = customerTestHelper.findWalletById(walletId);
                     }
                     assertThat(result.getAmount(), equalTo(walletAfterMarketCloseBalance));

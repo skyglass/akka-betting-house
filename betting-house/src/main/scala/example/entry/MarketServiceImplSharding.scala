@@ -7,7 +7,6 @@ import akka.cluster.sharding.typed.scaladsl.{
 }
 
 import akka.util.Timeout
-import java.time.{ Instant, OffsetDateTime, ZoneId }
 
 import example.betting.Market
 
@@ -148,9 +147,8 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
       val odds = marketData.odds.map(m =>
         Market.Odds(m.winHome, m.winAway, m.tie))
 
+      //TODO: conversion from marketData.opensAt Long to scala.Long doesn't work, temporarily disabled setting opensAt Long value in update method until further research (market open date is not used anywhere yet)
       val opensAt = Some(marketData.opensAt)
-
-      val result = Some(marketData.result.value)
 
       Market.Update(odds, opensAt, replyTo)
 

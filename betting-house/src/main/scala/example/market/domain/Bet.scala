@@ -18,22 +18,10 @@ import akka.persistence.typed.scaladsl.{
   RetentionCriteria
 }
 import akka.persistence.typed.PersistenceId
-import akka.stream.{ RestartSettings, UniqueKillSwitch }
 
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import akka.util.Timeout
-import example.betting.Market.{
-  Accepted,
-  ConsumerCreationFailure,
-  ConsumerCreationSuccess,
-  CreateResultsConsumer,
-  State
-}
-import org.apache.kafka.clients.admin.{
-  AdminClient,
-  DeleteConsumerGroupsOptions
-}
 import org.slf4j.LoggerFactory
 import projection.to.kafka.BetResultKafkaService
 
@@ -149,8 +137,6 @@ object Bet {
       extends State(
         status
       ) // the ask user when market no longer available
-  final case class SettledState(override val status: Status)
-      extends State(status)
 
   final case class ValidationsPassedState(override val status: Status)
       extends State(status)
@@ -245,9 +231,9 @@ object Bet {
         finish(state, command)
       case (state: State, command: GetState) =>
         getState(state, command.replyTo)
-      case (state: FailedState, command: ValidationsTimedOut) =>
-        Effect.none
+      case (_, command: ValidationsTimedOut)       => Effect.none
       case (_, command: ValidationsPassedResponse) => Effect.none
+      case (_, command: WalletRefundGranted)       => Effect.none
       case (_, command: Cancel)                    => cancel(state, command)
       case (_, command: ReplyCommand)              => reject(state, command)
       case (_, command: Fail)                      => fail(state, command)
@@ -262,7 +248,7 @@ object Bet {
       extends Event
   final case class FundsGranted(betId: String, state: OpenState)
       extends Event
-  final case class ValidationsPassed(betId: String, state: State)
+  final case class ValidationsPassed(betId: String, state: OpenState)
       extends Event
   final case class BetSettled(
       betId: String,
@@ -277,7 +263,6 @@ object Bet {
       stake: Int,
       result: Int)
       extends Event
-  final case class Settled(betId: String) extends Event
   final case class Cancelled(betId: String, reason: String)
       extends Event
   final case class MarketValidationFailed(
@@ -327,13 +312,12 @@ object Bet {
         state.copy(marketConfirmationRetryCount =
           state.marketConfirmationRetryCount + 1)
       case ValidationsPassed(betId, state) =>
-        ValidationsPassedState(state.status)
+        ValidationsPassedState(status = state.status
+          .copy(marketConfirmed = true, fundsConfirmed = true))
       case BetSettled(betId, state) =>
         BetSettledState(state.status)
       case Closed(betId) =>
         ClosedState(state.status)
-      case Settled(betId) =>
-        SettledState(state.status)
       case Cancelled(betId, reason) =>
         CancelledState(state.status)
       case MarketValidationFailed(_, reason) =>
@@ -647,7 +631,7 @@ object Bet {
   }
 
   private def requestValidationsPassed(
-      state: State,
+      state: OpenState,
       sharding: ClusterSharding,
       context: ActorContext[Command]): Effect[Event, State] = {
     Effect

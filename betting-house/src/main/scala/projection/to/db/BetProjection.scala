@@ -31,19 +31,28 @@ object BetProjection {
       system: ActorSystem[_],
       repository: BetRepository,
       producer: SendProducer[String, Array[Byte]]): Unit = {
+    val topic =
+      system.settings.config
+        .getString("kafka.bet-projection.topic")
 
     ShardedDaemonProcess(system).init(
       name = "bet-projection",
       Bet.tags.size,
       index =>
         ProjectionBehavior(
-          createProjection(system, repository, producer, index)),
+          createProjection(
+            system,
+            topic,
+            repository,
+            producer,
+            index)),
       ShardedDaemonProcessSettings(system),
       Some(ProjectionBehavior.Stop))
   }
 
   def createProjection(
       system: ActorSystem[_],
+      topic: String,
       repository: BetRepository,
       producer: SendProducer[String, Array[Byte]],
       index: Int)
@@ -60,7 +69,8 @@ object BetProjection {
     JdbcProjection.exactlyOnce(
       projectionId = ProjectionId("BetProjection", tag),
       sourceProvider = sourceProvider,
-      handler = () => new BetProjectionHandler(repository, producer),
+      handler =
+        () => new BetProjectionHandler(topic, repository, producer),
       sessionFactory = () => new ScalikeJdbcSession())(system)
   }
 }

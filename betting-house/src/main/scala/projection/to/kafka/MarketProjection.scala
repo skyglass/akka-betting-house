@@ -16,12 +16,7 @@ import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.persistence.query.Offset
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import example.repository.scalike.ScalikeJdbcSession
-import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.SendProducer
-import org.apache.kafka.common.serialization.{
-  ByteArraySerializer,
-  StringSerializer
-}
 import example.betting.Market
 
 //Bets grouped per Market and Wallet
@@ -61,8 +56,7 @@ object MarketProjection { //BPM
     JdbcProjection.atLeastOnceAsync(
       projectionId = ProjectionId("MarketProjection", tag),
       sourceProvider = sourceProvider,
-      handler =
-        () => new MarketProjectionHandler(system, topic, producer),
+      handler = () => new MarketProjectionHandler(topic, producer),
       sessionFactory = () => new ScalikeJdbcSession())(system)
   }
 }
