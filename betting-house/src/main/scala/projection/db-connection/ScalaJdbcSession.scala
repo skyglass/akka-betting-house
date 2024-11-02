@@ -1,7 +1,7 @@
 package example.repository.scalike
 
 import java.sql.Connection
-import scalikejdbc.DB
+import scalikejdbc.{ DB, DBSession }
 import akka.projection.jdbc.JdbcSession
 import akka.japi.function.Function
 

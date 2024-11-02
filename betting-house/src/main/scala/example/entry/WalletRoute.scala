@@ -28,16 +28,8 @@ import akka.cluster.sharding.typed.scaladsl.{
   ClusterSharding,
   Entity
 }
-import akka.cluster.sharding.typed.ShardingEnvelope
-import betting.house.projection.proto.{ SumStake, SumStakes }
-import example.repository.scalike.{
-  ScalikeJdbcSession,
-  WalletRepository
-}
 
-class WalletService(
-    implicit sharding: ClusterSharding,
-    walletRepository: WalletRepository) {
+class WalletService(implicit sharding: ClusterSharding) {
 
   implicit val executionContext = ExecutionContext.global
 
@@ -63,37 +55,25 @@ class WalletService(
               "funds".as[Int]) {
               (walletId, requestId, funds) =>
 
-                val requestExists = ScalikeJdbcSession.withSession {
-                  session =>
-                    walletRepository
-                      .walletRequestExists(requestId, session)
-                }
+                val wallet =
+                  sharding.entityRefFor(Wallet.typeKey, walletId)
+                def auxAddFundsRequest(requestId: String, funds: Int)(
+                    replyTo: ActorRef[Wallet.UpdatedResponse]) =
+                  Wallet.AddFundsRequest(requestId, funds, replyTo)
 
-                if (requestExists) {
-                  complete(Future.successful(StatusCodes.Accepted))
-                } else {
-                  val wallet =
-                    sharding.entityRefFor(Wallet.typeKey, walletId)
-                  def auxAddFundRequest(
-                      requestId: String,
-                      funds: Int)(
-                      replyTo: ActorRef[Wallet.UpdatedResponse]) =
-                    Wallet.AddFundRequest(requestId, funds, replyTo)
+                val response =
+                  wallet
+                    .ask(auxAddFundsRequest(requestId, funds))
+                    .mapTo[Wallet.UpdatedResponse]
+                    .map {
+                      case Wallet.Accepted => StatusCodes.Accepted
+                    }
 
-                  val response =
-                    wallet
-                      .ask(auxAddFundRequest(requestId, funds))
-                      .mapTo[Wallet.UpdatedResponse]
-                      .map {
-                        case Wallet.Accepted => StatusCodes.Accepted
-                      }
-
-                  complete(
-                    response
-                  ) //FIXME The request has been accepted for processing, but the processing has not been completed
-                }
-
+                complete(
+                  response
+                ) //FIXME The request has been accepted for processing, but the processing has not been completed
             }
+
           }
         },
         path("remove") {
@@ -104,40 +84,32 @@ class WalletService(
               "funds".as[Int]) {
               (walletId, requestId, funds) =>
 
-                val requestExists = ScalikeJdbcSession.withSession {
-                  session =>
-                    walletRepository
-                      .walletRequestExists(requestId, session)
-                }
+                val wallet =
+                  sharding.entityRefFor(Wallet.typeKey, walletId)
 
-                if (requestExists) {
-                  complete(Future.successful(StatusCodes.Accepted))
-                } else {
+                def auxReserveFundsRequest(
+                    requestId: String,
+                    funds: Int)(
+                    replyTo: ActorRef[Wallet.UpdatedResponse]) =
+                  Wallet
+                    .ReserveFundsRequest(requestId, funds, replyTo)
 
-                  val wallet =
-                    sharding.entityRefFor(Wallet.typeKey, walletId)
+                val response: Future[HttpResponse] =
+                  wallet
+                    .ask(auxReserveFundsRequest(requestId, funds))
+                    .mapTo[Wallet.UpdatedResponse]
+                    .map {
+                      case Wallet.Accepted =>
+                        HttpResponse(StatusCodes.Accepted)
+                      case Wallet.Rejected =>
+                        HttpResponse(
+                          StatusCodes.BadRequest,
+                          entity = "not enough funds in the wallet")
+                    }
 
-                  def auxReserveFunds(funds: Int)(
-                      replyTo: ActorRef[Wallet.UpdatedResponse]) =
-                    Wallet.ReserveFunds(funds, replyTo)
-
-                  val response: Future[HttpResponse] =
-                    wallet
-                      .ask(auxReserveFunds(funds))
-                      .mapTo[Wallet.UpdatedResponse]
-                      .map {
-                        case Wallet.Accepted =>
-                          HttpResponse(StatusCodes.Accepted)
-                        case Wallet.Rejected =>
-                          HttpResponse(
-                            StatusCodes.BadRequest,
-                            entity = "not enough funds in the wallet")
-                      }
-
-                  complete(
-                    response
-                  ) //FIXME The request has been accepted for processing, but the processing has not been completed
-                }
+                complete(
+                  response
+                ) //FIXME The request has been accepted for processing, but the processing has not been completed
             }
           }
         },

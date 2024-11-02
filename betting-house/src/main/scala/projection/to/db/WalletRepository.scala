@@ -18,10 +18,10 @@ class WalletRepositoryImpl extends WalletRepository {
   def addWalletRequest(
       requestId: String,
       session: ScalikeJdbcSession): Unit = {
-    session.db.withinTx { implicit dbSession =>
+    session.db.autoCommit { implicit dbSession =>
       sql"""
 			INSERT INTO
-			    wallet_request (request_id)
+			    wallet_request (requestId)
 				VALUES ($requestId)
 			   ON CONFLICT (requestId) DO NOTHING
 			""".executeUpdate().apply()
@@ -34,9 +34,9 @@ class WalletRepositoryImpl extends WalletRepository {
       session: ScalikeJdbcSession): Boolean = {
     session.db.readOnly { implicit dbSession =>
       sql"""
-            SELECT requestId FROM wallet_request WHERE requestId = $requestId
+            SELECT EXISTS(SELECT 1 FROM wallet_request WHERE requestId = $requestId) AS "walletRequestExists"
          """
-        .map(rs => true)
+        .map(rs => rs.boolean("walletRequestExists"))
         .single()
         .apply()
         .getOrElse(false)

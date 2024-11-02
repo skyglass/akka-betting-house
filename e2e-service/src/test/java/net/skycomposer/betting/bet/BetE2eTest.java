@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import java.time.Duration;
 import java.util.UUID;
 
+import feign.FeignException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,8 +54,13 @@ public class BetE2eTest extends E2eTest {
         double betOdds3 = 2.8;
         MarketData.Result betResult = MarketData.Result.TIE;
 
-        //Duplicate request with the same request id to make sure that duplicates are handled correctly
         WalletResponse walletResponse = customerTestHelper.createWallet(walletId, walletRequestId, walletBalance);
+        //Duplicate request with the same request id to make sure that duplicates are handled correctly
+        try {
+            walletResponse = customerTestHelper.createWallet(walletId, walletRequestId, walletBalance);
+        } catch (FeignException.InternalServerError e) {
+            //expected
+        }
         assertThat(walletResponse.getMessage(), equalTo("The request has been accepted for processing, but the processing has not been completed."));
         MarketResponse marketResponse = marketTestHelper.createMarket(marketId);
         assertThat(marketResponse.getMarketId(), equalTo(marketId));

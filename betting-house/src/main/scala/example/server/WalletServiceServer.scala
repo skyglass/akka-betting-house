@@ -19,7 +19,6 @@ object WalletServiceServer {
   def init(
       implicit system: ActorSystem[_],
       sharding: ClusterSharding,
-      walletRepository: WalletRepository,
       ec: ExecutionContext): Future[Http.ServerBinding] = {
 
     val port =

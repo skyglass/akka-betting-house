@@ -13,6 +13,13 @@ import akka.persistence.typed.scaladsl.{
   RetentionCriteria
 }
 import akka.persistence.typed.PersistenceId
+import akka.projection.jdbc.JdbcSession
+import example.repository.scalike.{
+  ScalikeJdbcSession,
+  WalletRepository,
+  WalletRepositoryImpl
+}
+import scalikejdbc.DB
 
 import scala.concurrent.duration._
 
@@ -25,12 +32,19 @@ object Wallet {
       amount: Int,
       replyTo: ActorRef[UpdatedResponse])
       extends Command
+
+  final case class ReserveFundsRequest(
+      requestId: String,
+      amount: Int,
+      replyTo: ActorRef[UpdatedResponse])
+      extends Command
+
   final case class AddFunds(
       amount: Int,
       replyTo: ActorRef[UpdatedResponse])
       extends Command
 
-  final case class AddFundRequest(
+  final case class AddFundsRequest(
       requestId: String,
       amount: Int,
       replyTo: ActorRef[UpdatedResponse])
@@ -41,8 +55,18 @@ object Wallet {
 
   sealed trait Event extends CborSerializable
 
-  final case class FundsRequested(requestId: String) extends Event
+  final case class FundsReservationRequested(
+      requestId: String,
+      amount: Int)
+      extends Event
+
+  final case class FundsAdditionRequested(
+      requestId: String,
+      amount: Int)
+      extends Event
+
   final case class FundsReserved(amount: Int) extends Event
+
   final case class FundsAdded(amount: Int) extends Event
   final case class FundsReservationDenied(amount: Int) extends Event
 
@@ -60,11 +84,17 @@ object Wallet {
         Behaviors
           .setup[Command] { context =>
             val sharding = ClusterSharding(context.system)
+            val walletRepository = new WalletRepositoryImpl()
             EventSourcedBehavior[Command, Event, State](
               PersistenceId(typeKey.name, walletId),
               State(0),
               commandHandler = (state, command) =>
-                handleCommands(state, command, sharding, context),
+                handleCommands(
+                  state,
+                  command,
+                  sharding,
+                  context,
+                  walletRepository),
               eventHandler = handleEvents)
               .withTagger {
                 case _ => Set(calculateTag(walletId, tags))
@@ -92,7 +122,9 @@ object Wallet {
       state: State,
       command: Command,
       sharding: ClusterSharding,
-      context: ActorContext[Command]): ReplyEffect[Event, State] = {
+      context: ActorContext[Command],
+      walletRepository: WalletRepository)
+      : ReplyEffect[Event, State] = {
     command match {
       case ReserveFunds(amount, replyTo) =>
         //it might need to check with an external service to
@@ -108,10 +140,42 @@ object Wallet {
             .persist(FundsReservationDenied(amount))
             .thenReply(replyTo)(state => Rejected)
         }
+      case ReserveFundsRequest(requestId, amount, replyTo) =>
+        if (walletRequestExists(requestId, walletRepository)) {
+          context.log.error(
+            s"funds reservation rejected as duplicate request with the same id: [{$requestId}]")
+          Effect.none
+            .thenReply(replyTo)(state => Rejected)
+        } else if (amount <= state.balance) {
+          Effect
+            .persist(FundsReservationRequested(requestId, amount))
+            .thenRun((_: State) =>
+              addWalletRequest(requestId, walletRepository))
+            .thenReply(replyTo)(state => Accepted)
+        } else {
+          context.log.error(
+            s"funds reservation denied exception: amount [{$amount}]")
+          Effect
+            .persist(FundsReservationDenied(amount))
+            .thenReply(replyTo)(state => Rejected)
+        }
       case AddFunds(amount, replyTo) =>
         Effect
           .persist(FundsAdded(amount))
           .thenReply(replyTo)(state => Accepted)
+      case AddFundsRequest(requestId, amount, replyTo) =>
+        if (walletRequestExists(requestId, walletRepository)) {
+          context.log.error(
+            s"add funds rejected as duplicate request with the same id: [{$requestId}]")
+          Effect.none
+            .thenReply(replyTo)(state => Rejected)
+        } else {
+          Effect
+            .persist(FundsAdditionRequested(requestId, amount))
+            .thenRun((_: State) =>
+              addWalletRequest(requestId, walletRepository))
+            .thenReply(replyTo)(state => Accepted)
+        }
       case CheckFunds(replyTo) =>
         Effect.reply(replyTo)(CurrentBalance(state.balance))
     }
@@ -120,7 +184,11 @@ object Wallet {
   def handleEvents(state: State, event: Event): State = event match {
     case FundsReserved(amount) =>
       State(state.balance - amount)
+    case FundsReservationRequested(requestId, amount) =>
+      State(state.balance - amount)
     case FundsAdded(amount) =>
+      State(state.balance + amount)
+    case FundsAdditionRequested(requestId, amount) =>
       State(state.balance + amount)
     case FundsReservationDenied(_) =>
       state
@@ -134,5 +202,21 @@ object Wallet {
     val tagIndex =
       math.abs(entityId.hashCode % tags.size)
     tags(tagIndex)
+  }
+
+  private def walletRequestExists(
+      requestId: String,
+      walletRepository: WalletRepository): Boolean = {
+    ScalikeJdbcSession.withSession { session =>
+      walletRepository
+        .walletRequestExists(requestId, session)
+    }
+  }
+
+  private def addWalletRequest(
+      requestId: String,
+      walletRepository: WalletRepository): Unit = {
+    ScalikeJdbcSession.withSession(session =>
+      walletRepository.addWalletRequest(requestId, session))
   }
 }

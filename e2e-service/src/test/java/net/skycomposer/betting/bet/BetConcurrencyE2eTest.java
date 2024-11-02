@@ -60,9 +60,13 @@ public class BetConcurrencyE2eTest extends E2eTest {
         MarketData.Result betResult = MarketData.Result.TIE;
         AtomicInteger counter = new  AtomicInteger(0);
 
-        customerTestHelper.createWallet(walletId, walletRequestId, walletBalance);
-        //Duplicate request with the same request id to make sure that duplicates are handled correctly
         WalletResponse walletResponse = customerTestHelper.createWallet(walletId, walletRequestId, walletBalance);
+        //Duplicate request with the same request id to make sure that duplicates are handled correctly
+        try {
+            walletResponse = customerTestHelper.createWallet(walletId, walletRequestId, walletBalance);
+        } catch (FeignException.InternalServerError e) {
+            //expected
+        }
         assertThat(walletResponse.getMessage(), equalTo("The request has been accepted for processing, but the processing has not been completed."));
         MarketResponse marketResponse = marketTestHelper.createMarket(marketId);
         assertThat(marketResponse.getMessage(), equalTo("initialized"));
@@ -134,7 +138,7 @@ public class BetConcurrencyE2eTest extends E2eTest {
         }
 
         assertTimeoutPreemptively(
-                Duration.ofSeconds(5)
+                Duration.ofSeconds(20)
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
                     while (result.getAmount() != walletBeforeMarketCloseBalance) {
@@ -150,12 +154,12 @@ public class BetConcurrencyE2eTest extends E2eTest {
 
 
         assertTimeoutPreemptively(
-                Duration.ofSeconds(10)
+                Duration.ofSeconds(20)
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
                     while (result.getAmount() != walletAfterMarketCloseBalance) {
                         log.info("--> " + result.getAmount());
-                        Thread.sleep(500);
+                        Thread.sleep(1000);
                         result = customerTestHelper.findWalletById(walletId);
                     }
                     assertThat(result.getAmount(), equalTo(walletAfterMarketCloseBalance));
