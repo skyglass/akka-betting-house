@@ -1,8 +1,12 @@
 package net.skycomposer.betting.bet;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
+import feign.FeignException;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -22,10 +26,11 @@ public class BetTestHelper {
 
     @Async
     public CompletableFuture<BetResponse> asyncPlaceBet(String betId, String marketId, String walletId, int stake,
-                                                 double odds, MarketData.Result result) {
+                                                 double odds, MarketData.Result result) throws InterruptedException {
         return CompletableFuture.completedFuture(createBet(betId, marketId, walletId, stake, odds, result));
     }
 
+    @SneakyThrows
     public BetResponse createBet(String betId, String marketId, String walletId, int stake, double odds, MarketData.Result result) {
         BetData betData = BetData.builder()
                 .betId(betId)
@@ -35,7 +40,16 @@ public class BetTestHelper {
                 .stake(stake)
                 .odds(odds)
                 .build();
-        return betClient.open(betData);
+        BetResponse response = null;
+        while (response == null) {
+            try {
+                response = betClient.open(betData);
+            } catch (FeignException.TooManyRequests e) {
+                TimeUnit.MILLISECONDS.sleep(Duration.ofSeconds(1).toMillis());
+            }
+        }
+        return response;
+
     }
 
     public BetData getState(String betId) {

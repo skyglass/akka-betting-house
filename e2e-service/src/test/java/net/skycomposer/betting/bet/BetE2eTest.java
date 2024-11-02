@@ -42,6 +42,7 @@ public class BetE2eTest extends E2eTest {
         String betId2 = UUID.randomUUID().toString();
         String betId3 = UUID.randomUUID().toString();
         String walletId = UUID.randomUUID().toString();
+        String walletRequestId = UUID.randomUUID().toString();
         int walletBalance = 100;
         String marketId = UUID.randomUUID().toString();
         int betStake = 100;
@@ -52,7 +53,8 @@ public class BetE2eTest extends E2eTest {
         double betOdds3 = 2.8;
         MarketData.Result betResult = MarketData.Result.TIE;
 
-        WalletResponse walletResponse = customerTestHelper.createWallet(walletId, walletBalance);
+        //Duplicate request with the same request id to make sure that duplicates are handled correctly
+        WalletResponse walletResponse = customerTestHelper.createWallet(walletId, walletRequestId, walletBalance);
         assertThat(walletResponse.getMessage(), equalTo("The request has been accepted for processing, but the processing has not been completed."));
         MarketResponse marketResponse = marketTestHelper.createMarket(marketId);
         assertThat(marketResponse.getMarketId(), equalTo(marketId));

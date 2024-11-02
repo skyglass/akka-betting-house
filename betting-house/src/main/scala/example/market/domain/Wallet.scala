@@ -29,10 +29,19 @@ object Wallet {
       amount: Int,
       replyTo: ActorRef[UpdatedResponse])
       extends Command
+
+  final case class AddFundRequest(
+      requestId: String,
+      amount: Int,
+      replyTo: ActorRef[UpdatedResponse])
+      extends Command
+
   final case class CheckFunds(replyTo: ActorRef[Response])
       extends Command
 
   sealed trait Event extends CborSerializable
+
+  final case class FundsRequested(requestId: String) extends Event
   final case class FundsReserved(amount: Int) extends Event
   final case class FundsAdded(amount: Int) extends Event
   final case class FundsReservationDenied(amount: Int) extends Event

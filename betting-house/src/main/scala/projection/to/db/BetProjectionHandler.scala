@@ -23,10 +23,7 @@ import com.google.protobuf.any.{ Any => PbAny }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class BetProjectionHandler(
-    topic: String,
-    repository: BetRepository,
-    producer: SendProducer[String, Array[Byte]])
+class BetProjectionHandler(topic: String, repository: BetRepository)
     extends JdbcHandler[EventEnvelope[Bet.Event], ScalikeJdbcSession] {
 
   val log = LoggerFactory.getLogger(classOf[BetProjectionHandler])
@@ -35,9 +32,10 @@ class BetProjectionHandler(
   override def process(
       session: ScalikeJdbcSession,
       envelope: EventEnvelope[Bet.Event]): Unit = {
-    log.debug(s"processing bet event [$envelope] to topic [$topic]}")
+    log.debug(s"processing bet event [$envelope]")
 
-    val event = envelope.event
+    //TODO: skip for now but the code is kept for demo purposes
+    /* val event = envelope.event
     val serializedEvent = serialize(event)
     if (!serializedEvent.isEmpty) {
       val record =
@@ -46,7 +44,7 @@ class BetProjectionHandler(
         log.debug(s"published event [$event] to topic [$topic]}")
         Done
       }
-    }
+    }*/
     envelope.event match {
       case b: Bet.Opened =>
         repository.addBet(
@@ -97,6 +95,7 @@ class BetProjectionHandler(
           marketConfirmationRetryCount,
           marketConfirmationMaxRetries)
         projection.proto.MarketConfirmed(betId, Some(openState))
+
       case Bet.FundsGranted(
           _,
           OpenState(
@@ -129,6 +128,7 @@ class BetProjectionHandler(
           marketConfirmationRetryCount,
           marketConfirmationMaxRetries)
         projection.proto.FundsGranted(betId, Some(openState))
+
       case Bet.ValidationsPassed(
           _,
           OpenState(
@@ -161,6 +161,7 @@ class BetProjectionHandler(
           marketConfirmationRetryCount,
           marketConfirmationMaxRetries)
         projection.proto.ValidationsPassed(betId, Some(state))
+
       case Bet.BetSettled(
           _,
           ValidationsPassedState(
@@ -185,6 +186,7 @@ class BetProjectionHandler(
         val state =
           projection.proto.ValidationsPassedState(Some(status))
         projection.proto.BetSettled(betId, Some(state))
+
       case Bet.Opened(
           betId,
           walletId,
@@ -199,10 +201,13 @@ class BetProjectionHandler(
           odds,
           stake,
           result)
+
       case Bet.Cancelled(betId, reason) =>
         projection.proto.Cancelled(betId, reason)
+
       case Bet.MarketValidationFailed(betId, reason) =>
         projection.proto.MarketValidationFailed(betId, reason)
+
       case Bet.MarketConfirmationDenied(
           _,
           reason,
@@ -239,6 +244,7 @@ class BetProjectionHandler(
           betId,
           reason,
           Some(openState))
+
       case Bet.FundReservationDenied(
           _,
           reason,
@@ -275,10 +281,13 @@ class BetProjectionHandler(
           betId,
           reason,
           Some(openState))
+
       case Bet.Failed(betId, reason) =>
         projection.proto.Failed(betId, reason)
+
       case Bet.Closed(betId) =>
         projection.proto.Closed(betId)
+
       case x =>
         log.error(s"ignoring event $x in projection")
         Empty.defaultInstance

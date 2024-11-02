@@ -5,20 +5,21 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.management.scaladsl.AkkaManagement
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+
 import scala.concurrent.{ ExecutionContext, Future }
 import akka.http.scaladsl.{ Http, HttpConnectionContext }
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import com.typesafe.config.ConfigFactory
-
 import example.bet.grpc.{ BetServiceHandler, BetServiceImplSharding }
-
 import example.betting.WalletService
+import example.repository.scalike.WalletRepository
 
 object WalletServiceServer {
 
   def init(
       implicit system: ActorSystem[_],
       sharding: ClusterSharding,
+      walletRepository: WalletRepository,
       ec: ExecutionContext): Future[Http.ServerBinding] = {
 
     val port =

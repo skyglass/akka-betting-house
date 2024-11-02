@@ -14,9 +14,9 @@ public interface CustomerClient {
     @GetMapping("/get-wallet/{walletId}")
     WalletData findWalletById(@PathVariable("walletId") String walletId);
 
-    @PostMapping("/add-funds/{walletId}/{funds}")
-    WalletResponse addFunds(@PathVariable("walletId") String walletId, @PathVariable("funds") int funds);
+    @PostMapping("/add-funds/{walletId}/{requestId}/{funds}")
+    public WalletResponse addFunds(@PathVariable String walletId, @PathVariable String requestId, @PathVariable int funds);
 
-    @PostMapping("/remove-funds/{walletId}/{funds}")
-    WalletResponse removeFunds(@PathVariable("walletId") String walletId, @PathVariable("funds") int funds);
+    @PostMapping("/remove-funds/{walletId}/{requestId}/{funds}")
+    public WalletResponse removeFunds(@PathVariable String walletId, @PathVariable String requestId, @PathVariable int funds);
 }

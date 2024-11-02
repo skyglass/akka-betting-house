@@ -17,14 +17,14 @@ public class WalletService {
         return walletClient.findById(walletId);
     }
 
-    public WalletResponse addFunds(String walletId, int funds) {
+    public WalletResponse addFunds(String walletId, String requestId, int funds) {
         WalletData walletData = findWalletById(walletId);
-        return new WalletResponse(walletClient.add(walletId, funds), walletId, walletData.getAmount() + funds);
+        return new WalletResponse(walletClient.add(walletId, requestId, funds), walletId, walletData.getAmount() + funds);
     }
 
-    public WalletResponse removeFunds(String walletId, int funds) {
+    public WalletResponse removeFunds(String walletId, String requestId, int funds) {
         WalletData walletData = findWalletById(walletId);
-        return new WalletResponse(walletClient.remove(walletId, funds), walletId, walletData.getAmount() - funds);
+        return new WalletResponse(walletClient.remove(walletId, requestId, funds), walletId, walletData.getAmount() - funds);
     }
 
 }

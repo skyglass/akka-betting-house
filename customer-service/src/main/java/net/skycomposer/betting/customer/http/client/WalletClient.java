@@ -11,8 +11,8 @@ public interface WalletClient {
     WalletData findById(@RequestParam String walletId);
 
     @PostMapping("/add")
-    String add(@RequestParam String walletId, @RequestParam int funds);
+    String add(@RequestParam String walletId, @RequestParam String requestId, @RequestParam int funds);
 
     @PostMapping("/remove")
-    String remove(@RequestParam String walletId, @RequestParam int funds);
+    String remove(@RequestParam String walletId, @RequestParam String requestId, @RequestParam int funds);
 }

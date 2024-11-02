@@ -398,13 +398,13 @@ object Bet {
       sharding: ClusterSharding,
       context: ActorContext[Command],
       timer: TimerScheduler[Command]): Effect[Event, State] = {
-    val marketConfirmed = state.status.marketConfirmed;
     command.response match {
       case Wallet.Accepted =>
-        if (marketConfirmed) {
+        if (state.status.marketConfirmed) {
           requestValidationsPassed(state, sharding, context)
+        } else {
+          Effect.persist(FundsGranted(state.status.betId, state))
         }
-        Effect.persist(FundsGranted(state.status.betId, state))
       case Wallet.Rejected =>
         if (state.fundReservationRetryCount <= state.fundReservationMaxRetries) {
           retryFundReservation(state, timer)

@@ -21,14 +21,14 @@ public class CustomerController {
     return walletService.findWalletById(walletId);
   }
 
-  @PostMapping("/add-funds/{walletId}/{funds}")
-  public WalletResponse addFunds(@PathVariable String walletId, @PathVariable int funds) {
-    return walletService.addFunds(walletId, funds);
+  @PostMapping("/add-funds/{walletId}/{requestId}/{funds}")
+  public WalletResponse addFunds(@PathVariable String walletId, @PathVariable String requestId, @PathVariable int funds) {
+    return walletService.addFunds(walletId, requestId, funds);
   }
 
-  @PostMapping("/remove-funds/{walletId}/{funds}")
-  public WalletResponse removeWallet(@PathVariable String walletId, @PathVariable int funds) {
-    return walletService.removeFunds(walletId, funds);
+  @PostMapping("/remove-funds/{walletId}/{requestId}/{funds}")
+  public WalletResponse removeWallet(@PathVariable String walletId, @PathVariable String requestId, @PathVariable int funds) {
+    return walletService.removeFunds(walletId, requestId, funds);
   }
 
 }

@@ -21,17 +21,21 @@ import example.bet.grpc.{ BetServiceImplSharding, BetServiceServer }
 
 import scala.io.StdIn
 import example.bet.akka.http.WalletServiceServer
-import example.repository.scalike.BetRepositoryImpl
+import example.repository.scalike.{
+  BetRepositoryImpl,
+  ScalikeJdbcSetup,
+  WalletRepositoryImpl
+}
 import betting.house.projection.{
   BetProjection,
   BetProjectionServer,
-  MarketProjection
+  MarketProjection,
+  WalletProjection
 }
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 
 import scala.util.control.NonFatal
-import example.repository.scalike.ScalikeJdbcSetup
 import org.apache.kafka.common.serialization.{
   ByteArraySerializer,
   StringSerializer
@@ -61,17 +65,20 @@ object Main {
       ClusterBootstrap(system).start()
       ScalikeJdbcSetup.init(system)
 
+      val betRepository = new BetRepositoryImpl()
+      val walletRepository = new WalletRepositoryImpl()
+
       BetServiceServer.init(system, sharding)
       MarketServiceServer.init(system, sharding, ec)
-      WalletServiceServer.init(system, sharding, ec)
+      WalletServiceServer.init(system, sharding, walletRepository, ec)
 
       val cluster = Cluster(system)
 
-      val betRepository = new BetRepositoryImpl()
       val producer = createProducer(system)
       val adminClient = createKafkaAdminClient(system)
       BetProjectionServer.init(betRepository)
-      BetProjection.init(system, betRepository, producer)
+      BetProjection.init(system, betRepository)
+      WalletProjection.init(system, walletRepository)
       MarketProjection.init(system, producer)
       log.warn("prepare consumer")
       BetResultKafkaService.init(

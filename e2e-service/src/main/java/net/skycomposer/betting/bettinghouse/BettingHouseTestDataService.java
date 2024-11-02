@@ -28,6 +28,7 @@ public class BettingHouseTestDataService extends JdbcTestDataService {
         executeString("DELETE FROM akka_projection_management");
         executeString("DELETE FROM akka_projection_offset_store");
         executeString("DELETE FROM bet_wallet_market");
+        executeString("DELETE FROM wallet_request");
     }
 
 }
