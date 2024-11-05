@@ -4,9 +4,9 @@
   <ul>
     <li>✅ <b>Cloud-Native Spring Boot and Akka Development Environment and Startup Template</b>
     <li>✅ <b>Concurrency and Resiliency Patterns in Saga Transactions for Spring Boot and Akka Microservices</b>
-    <li>✅ <b>Part 5: Reliable Long-Running Saga Transaction Processes</b>
+    <li>✅ <b>Part 5: Reliable Long-Running Saga Business Processes</b>
     <li>✅ <b>Reactive, Scalable, Persistent, Concurrent and Resilient Actor System with Akka Event Sourcing Framework</b>
-    <li>✅ <b>Kafka Dynamic Transaction Processing Queues for Long-Running Saga Transaction Processes</b>
+    <li>✅ <b>Kafka Dynamic Transaction Processing Queues for Long-Running Saga Business Processes</b>
   </ul>
 </ul>
 
@@ -17,7 +17,7 @@
     <li>📖 <b>Event-Sourcing Framework</b> based on Reactive, Concurrent, Scalable and Persistent Akka Actor System</li>
     <li>📖 <b>Akka Actor System</b> with gRPC and REST API Server</li>
     <li>📖 <b>Kafka Cluster</b> integrated with Akka Actor System</li>
-    <li>📖 <b>Long Running Saga Transaction Process Framework</b> based on Akka Actor System State Machine and Kafka Dynamic Topics</li>
+    <li>📖 <b>Long Running Saga Business Process Management Framework</b> based on Akka Actor System State Machine and Kafka Dynamic Topics</li>
     <li>📖 <b>Spring Boot Microservices</b> integrated with Akka Actor System as gRPC and REST API Clients</li>
     <li>📖 <b>Spring Boot gRPC Client</b> with Protobuf Maven Plugin</li>
     <li>📖 <b>Spring Cloud OpenFeign REST API Client</b></li>
@@ -97,8 +97,8 @@ This article will show you how to configure TLS on Azure Kubernetes Cluster with
 - I strongly recommend you finish this book, before following this guide!
 - This guide will only help you deploy the environment to local or azure cloud kubernetes cluster, enable github actions cd pipeline (work in progress) and configure local and production kubernetes development environment with skaffold
 - All information about Akka Actor System, Scala Development, Akka Event-Sourcing State Machine, Aka Scalable and Persistent Cluster and "Akka Betting House" example, is greatly explained in this book!
-- "Skyglass Akka Betting House" repository is based on the example from the book and further developed to complete the Long-Running Saga Transaction Process of Bet Settlement with Akka State Machine and Kafka Message Processing Queue
-- "Skyglass Akka Betting House" repository also contains additional examples of Scalability, Concurrency, Resilience, Event-Sourcing, State Management, Long-Running Saga Transaction Processes, Idempotent Consumers and Retryable Error Handling based on "Akka Betting House" Business Domain
+- "Skyglass Akka Betting House" repository is based on the example from the book and further developed to implement the Long-Running Saga Business Process of Bet Settlement with Akka Persistent State Machine and Kafka Dynamic Transaction Processing Queues
+- "Skyglass Akka Betting House" repository also contains additional examples of Scalability, Concurrency, Resilience, Event-Sourcing, State Management, Long-Running Saga Business Processes, Idempotent Consumers and Retryable Error Handling based on "Akka Betting House" Business Domain
 
 ### Local Kubernetes Environment Setup with Skaffold:
 
