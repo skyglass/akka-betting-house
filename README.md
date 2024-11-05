@@ -15,10 +15,12 @@
     <li>📖 <b>Swagger UI</b> REST API Gateway</li>
     <li>📖 <b>Spring Cloud Gateway</b> with Spring Security and Keycloak Authorization Server</li>
     <li>📖 <b>Event-Sourcing Framework</b> based on Reactive, Concurrent, Scalable and Persistent Akka Actor System</li>
-    <li>📖 <b>Akka Actor System</b> with GRPC and REST API Server</li>
+    <li>📖 <b>Akka Actor System</b> with gRPC and REST API Server</li>
     <li>📖 <b>Kafka Cluster</b> integrated with Akka Actor System</li>
     <li>📖 <b>Long Running Saga Transaction Process Framework</b> based on Akka Actor System State Machine and Kafka Dynamic Topics</li>
-    <li>📖 <b>Spring Boot Microservices</b> integrated with Akka Actor System as GRPC and REST API Clients</li>
+    <li>📖 <b>Spring Boot Microservices</b> integrated with Akka Actor System as gRPC and REST API Clients</li>
+    <li>📖 <b>Spring Boot gRPC Client</b></li>
+    <li>📖 <b>Spring Cloud OpenFeign REST API Client</b></li>
     <li>📖 <b>Postgresql</b> persistence storage for Akka Actor Environment</li>
     <li>📖 <b>E2E Concurrency and Resiliency Tests</b> with Spring Boot, Kafka UI, Spring JDBC and Spring Cloud OpenFeign REST API Client</li>
     <li>📖 <b>Keycloak Authorization Server</b> integrated with Swagger UI and Spring Security</li>
