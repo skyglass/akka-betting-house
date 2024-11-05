@@ -1,5 +1,5 @@
-### 📖 "Akka Betting House"
-### 📖 Cloud-Native Spring Boot Development Environment
+### 📖 Akka Betting House
+### 📖 Cloud-Native Spring Boot Development Environment and Startup Template
 ### 📖 Concurrency and Resiliency Patterns in Saga Transactions for Spring Boot Microservices (Part 5: Akka Actor System)
 ### 📖 See Parts 1-4 for more information: https://www.linkedin.com/posts/michaelsklyar_concurrency-and-resiliency-patterns-in-activity-7168742915765059586-irvJ
 
