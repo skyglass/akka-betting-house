@@ -39,7 +39,7 @@
     <li>✅ <b>Event-Sourcing Persistence with Akka Actor System, Kafka and PostgreSQL</b></li>
     <li>✅ <b>E2E Concurrency and Resiliency Tests with Spring Boot, Kafka UI, Spring JDBC and Spring Cloud OpenFeign REST API Client</b></li>
     <li>✅ <b>Keycloak Authorization Server</b></li>
-    <li>✅ <b>Terraform</b></li> (work in progress)
+    <li>✅ <b>Terraform</b> (work in progress)</li>
     <li>✅ <b>Kubernetes</b></li>
     <li>✅ <b>Github Actions</b> (work in progress)</li>
     <li>✅ <b>Github Secrets and envsubst Environment Variables parser</b> (work in progress)</li>
