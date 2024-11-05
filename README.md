@@ -19,7 +19,7 @@
     <li>📖 <b>Kafka Cluster</b> integrated with Akka Actor System</li>
     <li>📖 <b>Long Running Saga Transaction Process Framework</b> based on Akka Actor System State Machine and Kafka Dynamic Topics</li>
     <li>📖 <b>Spring Boot Microservices</b> integrated with Akka Actor System as gRPC and REST API Clients</li>
-    <li>📖 <b>Spring Boot gRPC Client</b></li>
+    <li>📖 <b>Spring Boot gRPC Client</b> with Protobuf Maven Plugin</li>
     <li>📖 <b>Spring Cloud OpenFeign REST API Client</b></li>
     <li>📖 <b>Postgresql</b> persistence storage for Akka Actor Environment</li>
     <li>📖 <b>E2E Concurrency and Resiliency Tests</b> with Spring Boot, Kafka UI, Spring JDBC and Spring Cloud OpenFeign REST API Client</li>
@@ -37,17 +37,17 @@
     <li>✅ <b>Akka Kubernetes Cluster</b></li>
     <li>✅ <b>Event-Driven Microservices with Spring Boot, Akka Actor System, Kafka and PostgreSQL</b></li>     
     <li>✅ <b>Event-Sourcing Persistence with Akka Actor System, Kafka and PostgreSQL</b></li>
-    <li>✅ <b>E2E Concurrency and Resiliency Tests</b> with Spring Boot, Kafka UI, Spring JDBC and Spring Cloud OpenFeign REST API Client</li>
+    <li>✅ <b>E2E Concurrency and Resiliency Tests with Spring Boot, Kafka UI, Spring JDBC and Spring Cloud OpenFeign REST API Client</b></li>
     <li>✅ <b>Keycloak Authorization Server</b></li>
-    <li>✅ <b>Terraform</b></li>
+    <li>✅ <b>Terraform</b></li> (work in progress)
     <li>✅ <b>Kubernetes</b></li>
     <li>✅ <b>Github Actions</b> (work in progress)</li>
     <li>✅ <b>Github Secrets and envsubst Environment Variables parser</b> (work in progress)</li>
     <li>✅ <b>Kubernetes Secrets and Configmap Variables</b> (work in progress)</li>
     <li>✅ <b>Local Kubernetes Development Environment with Skaffold</b></li>
     <li>✅ <b>Production Kubernetes Development Environment with Skaffold</b> (work in progress)</li>
-    <li>✅ <b>Custom Kubernetes Manifests Generation for Local and Production Environments with sh scripts</b></li>
-    <li>✅ <b>Custom Skaffold Manifests Generation for Local and Production Environments with sh scripts</b></li>
+    <li>✅ <b>Custom Kubernetes Manifest Generation for Local and Production Environments with sh scripts</b></li>
+    <li>✅ <b>Custom Skaffold Manifest Generation for Local and Production Environments with sh scripts</b></li>
     <li>✅ <b>Hot reload of Docker Containers for Local and Production Environments with Skaffold</b></li>
   </ul>
 </ul>
@@ -60,27 +60,27 @@
 
 
 
-## 📖 Step By Step Guide
+### 📖 Step By Step Guide
 
-### Step-01: Prepare Your Github Account (optional, only for production CD Environment)
+#### Step-01: Prepare Your Github Account (optional, only for production CD Environment)
 
 - make sure you have your own Github Account
 
-### Step 02 - Create New Github Repository (optional, only for production CD Environment)
+#### Step 02 - Create New Github Repository (optional, only for production CD Environment)
 
 - Clone this repository and copy the source code to your new repository
 
-### Step-03: Prepare Your Azure Account (optional, only for production Environment)
+#### Step-03: Prepare Your Azure Account (optional, only for production Environment)
 
 - make sure you have your own Azure Account with enough permissions (Sign Up for a Free Trial, if you don't have one)
 
-### Step-04: Prepare Source Code and Github Actions Workflow  (work in progress, optional, only for production CD Environment):
+#### Step-04: Prepare Source Code and Github Actions Workflow  (work in progress, optional, only for production CD Environment):
 
 - Edit "**.github/workflows/deploy-*.yaml**" files: replace "**master**" with the name of your main branch (you can change default main branch name in github repository settings)
 
 - Edit "**k8s/prod/ingress-srv.yaml**" file: replace "**skycomposer.net**" with the name of your registered domain (see **Step-05**  and **Azure Production Environment Setup** for more details)
 
-### Step-05: Register your domain (optional, only for production Environment):
+#### Step-05: Register your domain (optional, only for production Environment):
 
 - You need a registered domain to provide TLS connection with trusted Certificate Authority.
 
@@ -91,7 +91,7 @@ This article will show you how to configure TLS on Azure Kubernetes Cluster with
 
 - For more details, see `Azure Production Environment Setup`
 
-### Step-06: Read the book "Akka in Action, Second Edition" and try out examples from this book (if you want to learn more about Akka Actor System and "Akka Betting House" example):
+#### Step-06: Read the book "Akka in Action, Second Edition" and try out examples from this book (if you want to learn more about Akka Actor System and "Akka Betting House" example):
 
 - If you have further questions about Akka Actor System and "Akka Betting House", refer to this book: https://www.manning.com/books/akka-in-action-second-edition
 - I strongly recommend you finish this book, before following this guide!
@@ -100,7 +100,7 @@ This article will show you how to configure TLS on Azure Kubernetes Cluster with
 - "Skyglass Akka Betting House" repository is based on the example from the book and further developed to complete the Long-Running Saga Transaction Process of Bet Settlement with Akka State Machine and Kafka Message Processing Queue
 - "Skyglass Akka Betting House" repository also contains additional examples of Scalability, Concurrency, Resilience, Event-Sourcing, State Management, Long-Running Saga Transaction Processes, Idempotent Consumers and Retryable Error Handling based on "Akka Betting House" Business Domain
 
-## Local Kubernetes Environment Setup with Skaffold:
+### Local Kubernetes Environment Setup with Skaffold:
 
 - Create local Kubernetes Cluster. If you have Docker Desktop, just go to Settings -> Kubernetes -> Enable Kubernetes ->  Apply & Restart
 
@@ -233,7 +233,7 @@ STRIPE_KEY="$STRIPE_KEY"
 
 - If you run `sh skaffold-dev.sh` you will see logs in real-time. After closing the cli window, all kubernetes resources will be destroyed! Therefore, in order to deploy final changes to production use `sh skaffold-prod.sh`. You will not have hot reloading with `sh skaffold-prod.sh`, but kubernetes resources will not be destroyed after you close cli window.
 
-## Github Actions Deployment Pipeline Setup
+### Github Actions Deployment Pipeline Setup
 
 - create the following Github Secrets (Go to Your Repository -> Settings -> Secrets and Variables -> Actions -> New Repository Secret):
 
