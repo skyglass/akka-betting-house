@@ -5,7 +5,7 @@
     <li>✅ <b>Cloud-Native Spring Boot Development Environment</b> and Startup Template
     <li>✅ <b>Concurrency and Resiliency Patterns in Saga Transactions</b> for Spring Boot and Akka Microservices
     <li>✅ <b>Part 5: Reliable Long-Running Saga Transaction Processes</b>
-    <li>✅ <b>Reactive, Scalable, Persistent, Concurrent and Resilient State Management</b> with Akka Event Sourcing
+    <li>✅ <b>Reactive, Scalable, Persistent, Concurrent and Resilient State Management</b> with Akka <b>Event Sourcing Framework</b>
     <li>✅ <b>Kafka Dynamic Transaction Processing Queues</b> for Long-Running Saga Transaction Processes     
     <li>✅ <b>See Parts 1-4 for more information:</b> https://www.linkedin.com/posts/michaelsklyar_concurrency-and-resiliency-patterns-in-activity-7168742915765059586-irvJ
   </ul>
