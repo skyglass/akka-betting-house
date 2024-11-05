@@ -1,85 +1,90 @@
 ### 📖 Cloud-Native Startup Template
 
 <ul style="list-style-type:disc">
-  <li>📖 This <b>Cloud-Native Full-Stack Developer Template</b> provides fully functional Development and Production Environment</li>
-    <li>📖 <b>Next.js</b> and <b>React</b> UI</li>
-    <li>📖 <b>Node.js Typescript</b> Microservices</li>
-    <li>📖 <b>Event-Driven</b> Microservices with Data Replication and Concurrency Control</li>
-    <li>📖 Light-weight and high-performance <b>NATS</b> Messaging System</li>
+  <li>📖 This <b>Cloud-Native Full-Stack Developer Template</b> provides fully functional Development and Production Environment with Akka Cluster, Kafka Cluster and Spring Boot Microservices deployed to Kubernetes Cluster</li>
+    <li>📖 <b>Swagger UI</b> REST API Client</li>
+    <li>📖 <b>Spring Cloud Gateway</b></li>
+    <li>📖 <b>Event-Sourcing Framework</b> based on Reactive, Concurrent, Scalable and Persistent Akka Actor System</li>
+    <li>📖 <b>Akka Actor System</b> with GRPC and REST API Server</li>
+    <li>📖 <b>Kafka Message Cluster</b> integrated with Akka Actor System</li>
+    <li>📖 <b>Long Running Saga Transaction Process Framework</b> based on Akka Actor System State Machine and Kafka Dynamic Topics</li>
+    <li>📖 <b>Spring Boot Microservices</b> integrated with Akka Actor System as GRPC and REST API Clients</li>
+    <li>📖 <b>Postgresql</b> persistence storage for Akka Actor Environment</li>
+    <li>📖 <b>E2E Concurrency and Resiliency Tests</b> with Spring Boot, Kafka UI, Spring JDBC and Spring Cloud OpenFeign REST API Client</li>
+    <li>📖 <b>Keycloak Authorization Server</b> integrated with Swagger UI and Spring Security</li>
+    <li>📖 <b>Reactive and Event-Driven Programming Paradigm</b> based on Akka Actor System State Machine and Scala Programming Language</li>
     <li>📖 Local <b>Kubernetes</b> Development Environment with <b>Skaffold</b></li>
-    <li>📖 Production <b>Kubernetes</b> Development Environment with <b>Skaffold</b></li>
-    <li>📖 <b>Github Actions</b> CI/CD <b>GitOps</b> pipeline</li>
-    <li>📖 <b>Azure Terraform</b> Infrastructure with <b>AKS Kubernetes Cluster</b> and <b>Private Container Registry</b></li>
+    <li>📖 Production <b>Kubernetes</b> Development Environment with <b>Skaffold</b> (work in progress)</li>
+    <li>📖 <b>Github Actions</b> CI/CD <b>GitOps</b> pipeline (work in progress)</li>
+    <li>📖 <b>Azure Terraform</b> Infrastructure with <b>AKS Kubernetes Cluster</b> and <b>Private Container Registry</b> (work in progress)</li>
   <li>📖 Full <b>Technology Stack</b>:</li>
   <ul>
-    <li>✅ <b>React UI</b></li>  
-    <li>✅ <b>Next.js React Framework</b></li>
-    <li>✅ <b>Node.js Typescript Server</b></li>
-    <li>✅ <b>Event-Driven Microservices with Data Replication and Concurrency Control</b></li>     
-    <li>✅ <b>MongoDB Database</b></li>
-    <li>✅ <b>Mongoose MongoDB Object Modeling for Node.js</b></li> 
-    <li>✅ <b>NATS Messaging System</b></li>
-    <li>✅ <b>Custom Authentication Service with JWT Tokens</b></li>
-    <li>✅ <b>Custom Authorization Server</b></li>
-    <li>✅ <b>Stripe Payment Infrastructure</b></li>   
+    <li>✅ <b>Swagger UI</b></li>  
+    <li>✅ <b>Spring Cloud Gateway</b></li>
+    <li>✅ <b>Kafka Kubernetes Cluster with Strimzi</b></li>
+    <li>✅ <b>Akka Kubernetes Cluster</b></li>
+    <li>✅ <b>Event-Driven Microservices with Spring Boot, Akka Actor System, Kafka and PostgreSQL</b></li>     
+    <li>✅ <b>Event-Sourcing Persistence with Akka Actor System, Kafka and PostgreSQL</b></li>
+    <li>✅ <b>E2E Concurrency and Resiliency Tests</b> with Spring Boot, Kafka UI, Spring JDBC and Spring Cloud OpenFeign REST API Client</li>
+    <li>✅ <b>Keycloak Authorization Server</b></li>
     <li>✅ <b>Terraform</b></li>
     <li>✅ <b>Kubernetes</b></li>
-    <li>✅ <b>Github Actions</b></li>
-    <li>✅ <b>Github Secrets and envsubst Environment Variables parser</b></li>
-    <li>✅ <b>Kubernetes Secrets and Configmap Variables</b></li>
+    <li>✅ <b>Github Actions</b> (work in progress)</li>
+    <li>✅ <b>Github Secrets and envsubst Environment Variables parser</b> (work in progress)</li>
+    <li>✅ <b>Kubernetes Secrets and Configmap Variables</b> (work in progress)</li>
     <li>✅ <b>Local Kubernetes Development Environment with Skaffold</b></li>
-    <li>✅ <b>Production Kubernetes Development Environment with Skaffold</b></li>
-    <li>✅ <b>Custom Kubernetes Manfiests Generation for Local and Production Environments with sh scripts</b></li>
+    <li>✅ <b>Production Kubernetes Development Environment with Skaffold</b> (work in progress)</li>
+    <li>✅ <b>Custom Kubernetes Manifests Generation for Local and Production Environments with sh scripts</b></li>
     <li>✅ <b>Custom Skaffold Manifests Generation for Local and Production Environments with sh scripts</b></li>
-    <li>✅ <b>Hot reload of Node.js Typescript for Local and Production Environments with Skaffold</b></li>
     <li>✅ <b>Hot reload of Docker Containers for Local and Production Environments with Skaffold</b></li>
   </ul>
 </ul>
 
 ### 📖 Links
 
-- `Microservices with Node JS and React` Udemy Course: https://www.udemy.com/course/microservices-with-node-js-and-react
+- `Akka in Action, Second Edition` Book with `Akka Betting House` example: https://www.manning.com/books/akka-in-action-second-edition
+- `Fault Tolerance in Akka`: https://freecontent.manning.com/fault-tolerance-in-akka/
 
 
 ## 📖 Step By Step Guide
 
-### Step 01 - Create New Github Repository
-
-- Clone this repository and copy the source code to your new repository
-
-### Step-02: Prepare Your Azure Account
-
-- make sure you have your own Azure Account with enough permissions (Sign Up for a Free Trial, if you don't have one)
-
-### Step-03: Prepare Your Github Account
+### Step-01: Prepare Your Github Account (optional, only for production CD Environment)
 
 - make sure you have your own Github Account
 
-### Step-04: Prepare Source Code and Github Actions Workflow:
+### Step 02 - Create New Github Repository (optional, only for production CD Environment)
+
+- Clone this repository and copy the source code to your new repository
+
+### Step-03: Prepare Your Azure Account (optional, only for production Environment)
+
+- make sure you have your own Azure Account with enough permissions (Sign Up for a Free Trial, if you don't have one)
+
+### Step-04: Prepare Source Code and Github Actions Workflow  (work in progress, optional, only for production CD Environment):
 
 - Edit "**.github/workflows/deploy-*.yaml**" files: replace "**master**" with the name of your main branch (you can change default main branch name in github repository settings)
 
 - Edit "**k8s/prod/ingress-srv.yaml**" file: replace "**skycomposer.net**" with the name of your registered domain (see **Step-05**  and **Azure Production Environment Setup** for more details)
 
-
-### Step-05: Register your domain:
+### Step-05: Register your domain (optional, only for production Environment):
 
 - You need a registered domain to provide TLS connection with trusted Certificate Authority.
 
 - For more details on setting up TLS on AKS Ingress with LetsEncrypt see this article: https://medium.com/@jainchirag8001/tls-on-aks-ingress-with-letsencrypt-f42d65725a3
-This article will show you how to configure TLS on AKS with LetsEncrypt for any registered domain, including AWS Route 53.
+This article will show you how to configure TLS on Azure Kubernetes Cluster with LetsEncrypt for any registered domain, including AWS Route 53.
 
 - Make sure that you know how to create Hosted Zone and Record A for your domain provider.
 
 - For more details, see `Azure Production Environment Setup`
 
-### Step-06: Finish Udemy Course "Microservices with Node JS and React":
+### Step-06: Read the book "Akka in Action, Second Edition" and try out examples from this book (if you want to learn more about Akka Actor System and "Akka Betting House" example):
 
-- If you need help on Microservices with Node JS and React, see more details in this course: https://www.udemy.com/course/microservices-with-node-js-and-react
-- I strongly recommend you finish this course first, before following this guide!
-- This guide will only help you deploy the microservices to azure cloud kubernetes cluster, enable github actions cd pipeline and configure local and production kubernetes development environment with skaffold
-- All information about Next.js React Development, Node.js Typescript Development, Event-Driven Microservices with NATS Messaging System, Data Replication and Concurrency Control for Microservices, configuring custom Authentication Service and Authorization Server with JWT Tokens, and so on, is perfectly explained in this course!
-
+- If you have further questions about Akka Actor System and "Akka Betting House", refer to this book: https://www.manning.com/books/akka-in-action-second-edition
+- I strongly recommend you finish this book, before following this guide!
+- This guide will only help you deploy the environment to local or azure cloud kubernetes cluster, enable github actions cd pipeline (work in progress) and configure local and production kubernetes development environment with skaffold
+- All information about Akka Actor System, Scala Development, Akka Event-Sourcing State Machine, Aka Scalable and Persistent Cluster and "Akka Betting House" example, is greatly explained in this book!
+- "Skyglass Akka Betting House" repository is based on the example from the book and further developed to complete the Long-Running Saga Transaction Process of Bet Settlement with Akka State Machine and Kafka Message Processing Queue
+- "Skyglass Akka Betting House" repository also contains additional examples of Scalability, Concurrency, Resilience, Event-Sourcing, State Management, Long-Running Saga Transaction Processes, Idempotent Consumers and Retryable Error Handling based on "Akka Betting House" Business Domain
 
 ## Local Kubernetes Environment Setup with Skaffold:
 
@@ -99,19 +104,14 @@ These commands will install nginx ingress controller to your local kubernetes cl
 - create `.env.local` file in `env` folder and provide the following parameters:
 
 ```
-CONTAINER_REGISTRY="bettinghouse.azurecr.io" (provide your own container registry, see **Azure Production Environment Setup** for more details)
+CONTAINER_REGISTRY="bettinghouse.azurecr.io" (for local environment you can keep this name, for production environment provide your own container registry, see **Azure Production Environment Setup** for more details)
 DOCKER_FILE_NAME="Dockerfile"
 DOCKER_PUSH="false"
 VERSION="latest"
 BASE_URL="http://ingress-nginx-controller.ingress-nginx.svc.cluster.local"
-
-JWT_KEY="$JWT_KEY"
-STRIPE_KEY="$STRIPE_KEY"
 ```
 
-- Don't Worry! `env` folder is included to .gitignore. You will not reveal your secrets with git commit! :)
-- JWT_KEY can be generated with the command `openssl rand -base64 32`
-- STRIPE_KEY can be found in your Stripe Account (Developers -> API Keys -> Secret Key ->  Reveal test key)
+- Don't Panic! `env` folder is included to .gitignore. You will not reveal your secrets with git commit! :)
 - Note: CONTAINER_REGISTRY for local development environment can be any prefix, but it is recommended to use container registry name for consistency with production environment
 - BASE_URL for local kubernetes cluster uses ingress-nginx service ip. Please, don't change it! If your nginx-ingress controller is installed correctly, this url will work as expected.
 
@@ -119,7 +119,6 @@ STRIPE_KEY="$STRIPE_KEY"
 sh skaffold-local.sh
 ```
 This script will build docker images and start local kubernetes environment with hot reloading of your code changes
-
 
 - open `localhost` in your Browser and make sure that `Sign Up` and `Sign In` works, you are able to `Create a Ticket` and buy it
 
