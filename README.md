@@ -2,12 +2,11 @@
 
 <ul style="list-style-type:disc">
   <ul>
-    <li>✅ <b>Cloud-Native Spring Boot Development Environment</b> and Startup Template
-    <li>✅ <b>Concurrency and Resiliency Patterns in Saga Transactions</b> for Spring Boot and Akka Microservices
+    <li>✅ <b>Cloud-Native Spring Boot Development Environment and Startup Template</b>
+    <li>✅ <b>Concurrency and Resiliency Patterns in Saga Transactions for Spring Boot and Akka Microservices</b>
     <li>✅ <b>Part 5: Reliable Long-Running Saga Transaction Processes</b>
-    <li>✅ <b>Reactive, Scalable, Persistent, Concurrent and Resilient State Management</b> with Akka <b>Event Sourcing Framework</b>
-    <li>✅ <b>Kafka Dynamic Transaction Processing Queues</b> for Long-Running Saga Transaction Processes     
-    <li>✅ <b>See Parts 1-4 for more information:</b> https://www.linkedin.com/posts/michaelsklyar_concurrency-and-resiliency-patterns-in-activity-7168742915765059586-irvJ
+    <li>✅ <b>Reactive, Scalable, Persistent, Concurrent and Resilient State Management with Akka Event Sourcing Framework</b>
+    <li>✅ <b>Kafka Dynamic Transaction Processing Queues for Long-Running Saga Transaction Processes</b>
   </ul>
 </ul>
 
@@ -55,6 +54,8 @@
 
 - `Akka in Action, Second Edition` Book with `Akka Betting House` example: https://www.manning.com/books/akka-in-action-second-edition
 - `Fault Tolerance in Akka`: https://freecontent.manning.com/fault-tolerance-in-akka/
+- `Concurrency and Resiliency Patterns in Saga Transactions for Spring Boot Microservices, Parts 1-4`: https://www.linkedin.com/posts/michaelsklyar_concurrency-and-resiliency-patterns-in-activity-7168742915765059586-irvJ 
+
 
 
 ## 📖 Step By Step Guide
