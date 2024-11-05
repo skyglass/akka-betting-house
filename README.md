@@ -1,4 +1,4 @@
-### 📖 Cloud-Native Startup Template
+### 📖 "Akka Betting House" Cloud-Native Production-Ready Spring Boot Development Environment with Akka, Kafka and Kubernetes Cluster
 
 <ul style="list-style-type:disc">
   <li>📖 This <b>Cloud-Native Full-Stack Developer Template</b> provides fully functional Development and Production Environment with Akka Cluster, Kafka Cluster and Spring Boot Microservices deployed to Kubernetes Cluster</li>
