@@ -2,21 +2,21 @@
 
 <ul style="list-style-type:disc">
   <ul>
-    <li>✅ <b>Cloud-Native Spring Boot Development Environment and Startup Template</b>
+    <li>✅ <b>Cloud-Native Spring Boot and Akka Development Environment and Startup Template</b>
     <li>✅ <b>Concurrency and Resiliency Patterns in Saga Transactions for Spring Boot and Akka Microservices</b>
     <li>✅ <b>Part 5: Reliable Long-Running Saga Transaction Processes</b>
-    <li>✅ <b>Reactive, Scalable, Persistent, Concurrent and Resilient State Management with Akka Event Sourcing Framework</b>
+    <li>✅ <b>Reactive, Scalable, Persistent, Concurrent and Resilient Actor System with Akka Event Sourcing Framework</b>
     <li>✅ <b>Kafka Dynamic Transaction Processing Queues for Long-Running Saga Transaction Processes</b>
   </ul>
 </ul>
 
 <ul style="list-style-type:disc">
   <li>📖 This <b>Cloud-Native Full-Stack Developer Template</b> provides fully functional Development and Production Environment with Akka Cluster, Kafka Cluster and Spring Boot Microservices deployed to Kubernetes Cluster</li>
-    <li>📖 <b>Swagger UI</b> REST API Client</li>
-    <li>📖 <b>Spring Cloud Gateway</b></li>
+    <li>📖 <b>Swagger UI</b> REST API Gateway</li>
+    <li>📖 <b>Spring Cloud Gateway</b> with Spring Security and Keycloak Authorization Server</li>
     <li>📖 <b>Event-Sourcing Framework</b> based on Reactive, Concurrent, Scalable and Persistent Akka Actor System</li>
     <li>📖 <b>Akka Actor System</b> with GRPC and REST API Server</li>
-    <li>📖 <b>Kafka Message Cluster</b> integrated with Akka Actor System</li>
+    <li>📖 <b>Kafka Cluster</b> integrated with Akka Actor System</li>
     <li>📖 <b>Long Running Saga Transaction Process Framework</b> based on Akka Actor System State Machine and Kafka Dynamic Topics</li>
     <li>📖 <b>Spring Boot Microservices</b> integrated with Akka Actor System as GRPC and REST API Clients</li>
     <li>📖 <b>Postgresql</b> persistence storage for Akka Actor Environment</li>
