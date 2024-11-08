@@ -273,8 +273,32 @@ REGISTRY_PW=... (Azure Container Registry Password)
     <li>✅ <b>With Classic programming paradigm blocks of code are executed synchronously and sequentially</b>
     <li>✅ <b>With Classic programming paradigm ACID transactions are easy to implement</b>
     <li>✅ <b>With Reactive Programming synchronous and sequential execution is challenging and even if possible doesn't provide any advantages, because in the end you end up with the same blocking thread</b>
-    <li>✅ <b>With Reactive Programming you write functions without any idea on which thread and when they will be executed</b>
-    <li>✅ <b>You might call function F1 in one thread and then function F2 will be executed in a different thread with different context, possibly even in a different instance of the application</b>
+    <li>✅ <b>With Reactive Programming you write event-driven functions without any idea on which thread and when they will be executed</b>
+    <li>✅ <b>You might call function F1 in one thread and then function F2 will be executed in a different thread with different context, possibly even in a different instance of the reactive application cluster</b>
+    <li>✅ <b>Event-Driven nature of Reactive Programming fits naturally with Event Sourcing Framework</b>
+    <li>✅ <b>Event Sourcing is an alternative to classic ACID Transaction</b>
+    <li>✅ <b>Event Sourcing Framework provides eventual consistency by writing append-only events in the durable event storage</b>
+    <li>✅ <b>Reactive Programming and Event Sourcing are built on the principles of Domain-Driven Design: You focus on the business logic and let the Reactive Framework and Event Sourcing Storage deal with complexity of the Scalability, Concurrency, Resiliency, Fault Tolerance, Error Handling, Connection Pooling, Thread Pooling and transparent location discovery</b>
+    <li>✅ <b>For example, you can create persistent micro process with its own ID, state and business logic, as Actor</b>
+    <li>✅ <b>Any two events, sent to actor with the same ID must be processed sequentially - Concurrency and Thread Safety for the Actor with the same ID is enabled by Reactive Actor Frameworks out of the box</b>
+    <li>✅ <b>Reactive Actor Frameworks guarantee efficient resource usage by executing Actor Events on any available thread but guarantee locking on event id</b>
+    <li>✅ <b>In case any application instance crashes, Actor state must be restored from the database</b>
+    <li>✅ <b>Actor State can be restored by replaying all its events from the beginning, or starting from the latest snapshot</b>
+    <li>✅ <b>Akka Actor System is a powerful reactive actor framework, distributed in Java or Scala, and enabling all of the above-mentioned Actor System capabilities</b>
+    <li>✅ <b>Akka Cluster provides Actor persistence, scalability, effective resource usage and strong-typed reactive programming paradigm allowing programmers to focus on the business-logic</b>
+    <li>✅ <b>Akka Actor System framework provides powerful persistent state machine for each actor and allow to scale the cluster, if necessary, to deal with millions of actors, each with its own state and with dynamic thread-locking on actor ID</b>
+    <li>✅ <b>Millions of actors can exist in Akka Cluster Memory. Each Actor has very low memory footprint, in contrast to JVM Threads</b>
+    <li>✅ <b>Akka State Machine handles commands, persists events, safely updates its state and prevent from running commands in a wrong state</b>
+    <li>✅ <b>For example, Akka State Machine can handle idempotency by switching to a different state. If duplicate command is sent again, Akka will ignore it, because unsupported state tries to handle duplicate command</b>
+    <li>✅ <b>Akka Cluster can be easily scaled, when deployed to Kubernetes Cluster</b>
+    <li>✅ <b>Akka Cluster requires persistent storage for storing Event Sourcing Events and Metadata. The list of supported databases: PostgreSQL, Oracle, Microsoft SQL Server, Cassandra</b>
+    <li>✅ <b>JDBC and R2DBC plugins enable integration of Akka Event Processing with JDBC-compliant databases</b>
+    <li>✅ <b>Alpakka plugin enables integration of Akka Event Processing with Kafka</b>
+    <li>✅ <b>Integration of Akka with Kafka allows to process millions of events reliably, asynchronously, transactionally, safely and efficiently</b>
+    <li>✅ <b>Akka State Machine integrated with Kafka is a powerful combination to build Long-Running Saga Transactions also known as Business Processes</b>
+    <li>✅ <b>Each Business Process Instance is an actor of some type, with its own unique ID, state transition business logic and persistent state</b>
+    <li>✅ <b>Other Powerful Features of Akka Actors: Context Sharing, Sharding, Actor Hierarchy, Error Handling with Retry, Timeout or Scheduling Events and so on</b>
+    <li>✅ <b>Parent Actor can create child  Actors and stop all children, when it stops. Parent actor can also notify all children or children can notify parents</b>
   </ul>
 </ul>
 
