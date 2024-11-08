@@ -258,3 +258,24 @@ REGISTRY_PW=... (Azure Container Registry Password)
 - open https link for your registered domain in your Browser and make sure that you can see `SkyComposer 2` title on the top left
 
 - Congratulations! You successfuly tested `Ticketing App` code changes with Github Actions Deployment Pipeline!
+
+
+
+### 📖 Akka Actor System Overview
+
+<ul style="list-style-type:disc">
+  <ul>
+    <li>✅ <b>Classic Object-Oriented Paradigm dealing with intensive I/O operations inefficiently uses thread resources by blocking operations</b>
+    <li>✅ <b>While waiting for the response, thread is waiting blocked, without doing any useful work</b>
+    <li>✅ <b>More efficient resource usage would be sending non-blocking job request in one thread and notify about the response in the other available thread </b>
+    <li>✅ <b>This variation of Observer Pattern allows thread continue after sending the request and handle another queued job</b>
+    <li>✅ <b>Reactive programming paradigm, despite its power, has a lot of challenges</b>
+    <li>✅ <b>With Classic programming paradigm blocks of code are executed synchronously and sequentially</b>
+    <li>✅ <b>With Classic programming paradigm ACID transactions are easy to implement</b>
+    <li>✅ <b>With Reactive Programming synchronous and sequential execution is challenging and even if possible doesn't provide any advantages, because in the end you end up with the same blocking thread</b>
+    <li>✅ <b>With Reactive Programming you write functions without any idea on which thread and when they will be executed</b>
+    <li>✅ <b>You might call function F1 in one thread and then function F2 will be executed in a different thread with different context, possibly even in a different instance of the application</b>
+  </ul>
+</ul>
+
+![ACID Transactions with Reactive Programming are challenging to implement](documentation/acid-reactive.png)
