@@ -261,7 +261,9 @@ REGISTRY_PW=... (Azure Container Registry Password)
 
 
 
-### 📖 Akka Actor System Overview
+# 📖 Akka Actor System Overview
+
+![Classic vs Reactive Programming](documentation/classic-reactive.png)
 
 <ul style="list-style-type:disc">
   <ul>
