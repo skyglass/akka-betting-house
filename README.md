@@ -270,34 +270,36 @@ REGISTRY_PW=... (Azure Container Registry Password)
     <li>✅ <b>Classic Programming Paradigm dealing with blocking I/O operations inefficiently uses thread resources</b>
     <li>✅ <b>While waiting for the response, thread is waiting blocked, without doing any useful work</b>
     <li>✅ <b>More efficient resource usage would be sending non-blocking job request in one thread and notify about the response in the other available thread </b>
-    <li>✅ <b>This variation of Observer Pattern allows thread to continue after sending the request and handle another queued job</b>
-    <li>✅ <b>Reactive programming paradigm, despite its power, has a lot of challenges</b>
+    <li>✅ <b>Reactive Programming is a variation of Observer Pattern, when thread sends request and then notified about the response later</b>
+    <li>✅ <b>Reactive Programming enables thread to continue after sending the request and handle another queued job, while waiting for the response</b>
+    <li>✅ <b>But Reactive programming paradigm, despite its power, has a lot of challenges</b>
     <li>✅ <b>With Classic programming paradigm blocks of code are executed synchronously and sequentially</b>
     <li>✅ <b>With Classic programming paradigm ACID transactions are easy to implement</b>
-    <li>✅ <b>With Reactive Programming synchronous and sequential execution is challenging and even if possible doesn't provide any advantages, because in the end you end up with the same blocking operation</b>
-    <li>✅ <b>With Reactive Programming you write event-driven handlers without any idea on which thread and in which context they will be executed</b>
-    <li>✅ <b>You might call handler F1 in one thread and then handler F2 will be executed in a different thread with different context, possibly even in a different instance of the reactive application</b>
+    <li>✅ <b>But with Reactive Programming synchronous and sequential execution is challenging and even if possible doesn't provide any advantages, because in the end you end up with the same blocking operation</b>
+    <li>✅ <b>With Reactive Programming you write event-driven functional handlers without any idea on which thread and in which context they will be executed</b>
+    <li>✅ <b>You might call functional handler F1 in one thread and then functional handler F2 will be executed in a different thread with different context, possibly even in a different instance of the reactive application</b>
     <li>✅ <b>Event-Driven nature of Reactive Programming fits naturally with Event Sourcing Framework</b>
     <li>✅ <b>Event Sourcing is an alternative to classic ACID Transactions</b>
-    <li>✅ <b>Event Sourcing Framework provides eventual consistency by writing append-only events in the durable event storage</b>
+    <li>✅ <b>Event Sourcing Framework provides eventual consistency by writing append-only events to the durable event storage</b>
     <li>✅ <b>Reactive Programming and Event Sourcing are built on the principles of Domain-Driven Design: You focus on the business logic and let the Reactive Framework and Event Sourcing Storage deal with complexity of the Scalability, Concurrency, Resiliency, Fault Tolerance, Error Handling, Connection Pooling, Thread Pooling and transparent location discovery</b>
     <li>✅ <b>For example, you can create persistent micro process with its own ID, state and business logic, also known as Actor</b>
-    <li>✅ <b>Any two messages, sent to actor with the same ID must be processed sequentially - Thread Safety for the Actor with the same ID is enabled by Reactive Actor Frameworks out of the box</b>
-    <li>✅ <b>Reactive Actor Frameworks guarantee efficient resource usage by executing Actor Event Handlers on any available thread and guarantee pessimistic locking of the handlers on actor ID</b>
-    <li>✅ <b>In case any application instance crashes, persistent actor state is restored from the database</b>
+    <li>✅ <b>Any two messages, sent to actor with the same ID must be processed sequentially - Reactive Actor Frameworks guarantee Thread Safety for the Actor with the same ID</b>
+    <li>✅ <b>Reactive Actor Frameworks provide efficient resource usage by executing queued Actor Event Handlers in the next available thread from the pool</b>
+    <li>✅ <b>Reactive Actor Frameworks enable concurrent event handling for actors with different IDs</b>
+    <li>✅ <b>Reactive Actor Frameworks enable thread-safety for handling events of actors with the same ID</b>
+    <li>✅ <b>In case any application instance crashes, persistent actor state can be restored from the database</b>
     <li>✅ <b>Actor State can be restored by replaying all its events from the beginning, or starting from the latest snapshot</b>
     <li>✅ <b>Akka Actor System is a powerful reactive actor framework, available in Java or Scala, and enabling all of the above-mentioned Actor System capabilities</b>
-    <li>✅ <b>Akka Cluster provides Actor persistence, scalability, effective resource usage and strong-typed reactive programming paradigm enabling programmers to focus on the business-logic</b>
-    <li>✅ <b>Akka Actor System framework provides powerful persistent state machine for each actor and allows to scale the cluster, if necessary, in order to deal with millions of actors, each with its own state and with pessimistic locking on actor ID</b>
+    <li>✅ <b>Akka Actor System provides Actor persistence, scalability, effective resource usage and strong-typed reactive programming paradigm helping programmers to focus on the business-logic</b>
+    <li>✅ <b>Akka Actor System framework provides powerful persistent state machine for each actor and allows to scale Akka Cluster, if necessary, in order to deal with millions of actors, each with its own state</b>
     <li>✅ <b>Millions of actors can exist in Akka Cluster Memory. Each Actor has very low memory footprint, in contrast to JVM Threads</b>
-    <li>✅ <b>Akka State Machine handles commands, persists events, safely updates its state and prevent from running commands in a wrong state</b>
-    <li>✅ <b>For example, Akka State Machine can handle idempotency by switching to a different state. If duplicate command is sent again, Akka will ignore it, because unsupported state would try to handle duplicate command</b>
+    <li>✅ <b>Akka State Machine handles commands, persists events, safely updates its state and prevents from handling events in a wrong state</b>
     <li>✅ <b>Akka Cluster can be easily scaled, when deployed to Kubernetes Cluster</b>
     <li>✅ <b>Akka Cluster requires persistent storage for storing Event Sourcing Events and Metadata. The list of supported databases: PostgreSQL, Oracle, Microsoft SQL Server, Cassandra</b>
-    <li>✅ <b>JDBC and R2DBC plugins enable integration of Akka Event Processing with JDBC- and R2DBC-compliant databases</b>
-    <li>✅ <b>Alpakka plugin enables integration of Akka with Kafka</b>
-    <li>✅ <b>Integration of Akka with Kafka enables processing of millions of events reliably, asynchronously, transactionally, safely and efficiently</b>
-    <li>✅ <b>Akka State Machine integrated with Kafka is a powerful combination to build Long-Running Saga Transactions also known as Business Processes</b>
+    <li>✅ <b>JDBC and R2DBC plugins enable integration of Akka Event Handlers with JDBC- and R2DBC-compliant databases</b>
+    <li>✅ <b>Alpakka plugin enables integration of Akka Event Handlers with Kafka</b>
+    <li>✅ <b>Integration of Akka with Kafka enables reliable processing of millions of events</b>
+    <li>✅ <b>Akka State Machine integrated with Kafka and Persistent Storage is a powerful combination to build Long-Running Saga Transactions also known as Business Processes</b>
     <li>✅ <b>Each Business Process Instance is an actor of some type, with its own unique ID, state transition business logic and persistent state</b>
     <li>✅ <b>Other Powerful Features of Akka Actors: Context Sharing, Sharding, Actor Hierarchy, Error Handling with Retry, Timeout or Scheduling Events and so on</b>
     <li>✅ <b>Parent Actor can create child  Actors and stop all children, when parent actor stops. Parent actor can also notify all children or children can notify parents</b>
