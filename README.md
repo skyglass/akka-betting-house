@@ -277,7 +277,7 @@ REGISTRY_PW=... (Azure Container Registry Password)
     <li>✅ <b>With Classic programming paradigm ACID transactions are easy to implement</b>
     <li>✅ <b>But with Reactive Programming synchronous and sequential execution is challenging and even if possible doesn't provide any advantages, because in the end you end up with the same blocking operation</b>
     <li>✅ <b>With Reactive Programming you write event-driven functional handlers without any idea on which thread and in which context they will be executed</b>
-    <li>✅ <b>You might call functional handler F1 in one thread and then functional handler F2 will be executed in a different thread with different context, possibly even in a different instance of the reactive application</b>
+    <li>✅ <b>Functional handler F1 might be executed in one thread and then functional handler F2 will be executed in a different thread with different context, possibly even in a different instance of the reactive application</b>
     <li>✅ <b>Event-Driven nature of Reactive Programming fits naturally with Event Sourcing Framework</b>
     <li>✅ <b>Event Sourcing is an alternative to classic ACID Transactions</b>
     <li>✅ <b>Event Sourcing Framework provides eventual consistency by writing append-only events to the durable event storage, which acts as a single source of truth</b>
