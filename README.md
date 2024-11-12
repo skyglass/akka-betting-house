@@ -281,7 +281,7 @@ REGISTRY_PW=... (Azure Container Registry Password)
     <li>✅ <b>Event-Driven nature of Reactive Programming fits naturally with Event Sourcing Framework</b>
     <li>✅ <b>Event Sourcing is an alternative to classic ACID Transactions</b>
     <li>✅ <b>Event Sourcing Framework provides eventual consistency by writing append-only events to the durable event storage, which acts as a single source of truth</b>
-    <li>✅ <b>Actor Frameworks deal with persistent event sourced micro processes, with its own ID, state and business logic, also known as Actors</b>
+    <li>✅ <b>Actor Frameworks deal with persistent event sourced micro processes, each with its own ID, state and business logic, also known as Actors</b>
     <li>✅ <b>Any two messages, sent to actor with the same ID must be processed sequentially - Reactive Actor Frameworks guarantee Thread Safety for the Actors with the same ID</b>
     <li>✅ <b>Reactive Actor Frameworks provide efficient resource usage by executing queued Actor Message Handlers in the next available thread from the pool</b>
     <li>✅ <b>Reactive Actor Frameworks allow concurrent event handling for actors with different IDs</b>
