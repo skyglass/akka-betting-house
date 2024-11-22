@@ -10,10 +10,17 @@ spec:
     - host: localhost
       http:
         paths:
-          - path: /?(.*)
+          - path: /api?(.*)
             pathType: ImplementationSpecific
             backend:
               service:
                 name: gateway
                 port:
                   number: 9000
+          - path: /?(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: betting-ui
+                port:
+                  number: 3000

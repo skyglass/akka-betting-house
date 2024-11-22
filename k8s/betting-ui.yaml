@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: betting-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: betting-ui
+  template:
+    metadata:
+      labels:
+        app: betting-ui
+    spec:
+      containers:
+        - name: betting-ui
+          image: $CONTAINER_REGISTRY/betting-ui:$VERSION
+          imagePullPolicy: IfNotPresent    
+          env:
+            - name: BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: base-url-config
+                  key: BASE_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: betting-ui
+spec:
+  selector:
+    app: betting-ui
+  ports:
+    - name: betting-ui
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
