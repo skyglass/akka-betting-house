@@ -4,10 +4,14 @@ server:
     idle-timeout: 15s
   shutdown: graceful
   forward-headers-strategy: framework
+  servlet:
+    context-path: /api
 
 spring:
   application:
     name: gateway
+  webflux:
+    base-path: /api
   lifecycle:
     timeout-per-shutdown-phase: 15s
   cloud:
@@ -60,9 +64,9 @@ spring:
         - id: customer
           uri: ${CUSTOMER_SERVICE_URL:http://localhost:9001}
           predicates:
-            - Path=/customer/**
+            - Path=/api/customer/**
           filters:
-            - RewritePath=/customer/(?<path>.*), /$\{path}
+            - RewritePath=/api/customer/(?<path>.*), /$\{path}
             - name: CircuitBreaker
               args:
                 name: customerCircuitBreaker
@@ -70,9 +74,9 @@ spring:
         - id: market
           uri: ${MARKET_SERVICE_URL:http://localhost:9004}
           predicates:
-            - Path=/market/**
+            - Path=/api/market/**
           filters:
-            - RewritePath=/market/(?<path>.*), /$\{path}
+            - RewritePath=/api/market/(?<path>.*), /$\{path}
             - name: CircuitBreaker
               args:
                 name: marketCircuitBreaker
@@ -80,9 +84,9 @@ spring:
         - id: betting
           uri: ${BETTING_SERVICE_URL:http://localhost:9005}
           predicates:
-            - Path=/betting/**
+            - Path=/api/betting/**
           filters:
-            - RewritePath=/betting/(?<path>.*), /$\{path}
+            - RewritePath=/api/betting/(?<path>.*), /$\{path}
             - name: CircuitBreaker
               args:
                 name: bettingCircuitBreaker
@@ -173,18 +177,19 @@ springdoc:
   enable-native-support: true
   api-docs:
     enabled: true
+    path: /v3/api-docs
   swagger-ui:
     enabled: true
     # groups-order: DESC
     path: /
-    config-url: /v3/api-docs/swagger-config
+    config-url: /api/v3/api-docs/swagger-config
     urls:
       # - url: /v3/api-docs
       #   name: API Gateway Service
       #   primaryName: API Gateway Service
-      - url: /customer/v3/api-docs
+      - url: /api/customer/v3/api-docs
         name: Customer Service
-      - url: /market/v3/api-docs
+      - url: /api/market/v3/api-docs
         name: Market Service
-      - url: /betting/v3/api-docs
+      - url: /api/betting/v3/api-docs
         name: Betting Service

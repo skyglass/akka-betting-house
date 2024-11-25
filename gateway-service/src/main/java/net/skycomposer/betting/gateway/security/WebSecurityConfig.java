@@ -26,7 +26,7 @@ public class WebSecurityConfig {
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         .pathMatchers(HttpMethod.GET,"/webjars/**").permitAll()
-                        .pathMatchers(HttpMethod.GET,"/", "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                        .pathMatchers(HttpMethod.GET,"/", "/api", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .pathMatchers(HttpMethod.GET,"/swagger-resources/**").permitAll()
                         .pathMatchers(HttpMethod.GET,"/v3/api-docs/**").permitAll()
                         .pathMatchers(HttpMethod.GET,"/favicon.ico").permitAll()

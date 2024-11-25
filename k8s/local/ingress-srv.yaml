@@ -4,13 +4,14 @@ metadata:
   name: ingress-service
   annotations:
     nginx.ingress.kubernetes.io/use-regex: 'true'
+    nginx.ingress.kubernetes.io/x-forwarded-prefix: 'true'
 spec:
   ingressClassName: nginx
   rules:
     - host: localhost
       http:
         paths:
-          - path: /api?(.*)
+          - path: /api/?(.*)
             pathType: ImplementationSpecific
             backend:
               service:
