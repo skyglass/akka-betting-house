@@ -4,8 +4,6 @@ server:
     idle-timeout: 15s
   shutdown: graceful
   forward-headers-strategy: framework
-  servlet:
-    context-path: /api
 
 spring:
   application:
@@ -66,7 +64,6 @@ spring:
           predicates:
             - Path=/api/customer/**
           filters:
-            - RewritePath=/api/customer/(?<path>.*), /$\{path}
             - name: CircuitBreaker
               args:
                 name: customerCircuitBreaker
@@ -76,7 +73,6 @@ spring:
           predicates:
             - Path=/api/market/**
           filters:
-            - RewritePath=/api/market/(?<path>.*), /$\{path}
             - name: CircuitBreaker
               args:
                 name: marketCircuitBreaker
@@ -86,7 +82,6 @@ spring:
           predicates:
             - Path=/api/betting/**
           filters:
-            - RewritePath=/api/betting/(?<path>.*), /$\{path}
             - name: CircuitBreaker
               args:
                 name: bettingCircuitBreaker

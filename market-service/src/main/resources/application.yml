@@ -4,6 +4,8 @@ server:
     include-binding-errors: always
   shutdown: graceful
   forward-headers-strategy: framework
+  servlet:
+    context-path: /api/market
   tomcat:
     connection-timeout: 10s
     keep-alive-timeout: 20s
