@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import withAuth from '../auth/middleware/withAuth';
 
 const LandingPage = ({ currentUser, tickets }) => {
   const ticketList = tickets.map((ticket) => {
@@ -38,4 +39,4 @@ LandingPage.getInitialProps = async (context, client, currentUser) => {
   return { tickets: data };
 };
 
-export default LandingPage;
+export default withAuth(LandingPage);

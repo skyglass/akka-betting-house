@@ -1,9 +1,10 @@
 import Keycloak from 'keycloak-js';
+import { config } from './Constants'
 
 const keycloakConfig = {
-  url: process.env.KEYCLOAK_URL, // Keycloak URL
-  realm: process.env.KEYCLOAK_REALM, // Keycloak Realm
-  clientId: process.env.KEYCLOAK_CLIENT_ID, // Keycloak OAUTH2 client ID
+  url: config.keycloak.BASE_URL, // Keycloak URL
+  realm: config.keycloak.REALM, // Keycloak Realm
+  clientId: config.keycloak.CLIENT_ID, // Keycloak OAUTH2 client ID
 };
 
 let keycloak;

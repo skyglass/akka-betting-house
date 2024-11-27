@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LogoutButton from '../auth/components/LogoutButton';
 
 export default ({ currentUser }) => {
   const links = [

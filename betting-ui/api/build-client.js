@@ -1,11 +1,12 @@
 import axios from 'axios';
+import { config } from '../Constants'
 
 export default ({ req }) => {
   if (typeof window === 'undefined') {
     // We are on the server
 
     return axios.create({
-      baseURL: process.env.BASE_URL,
+      baseURL: config.url.API_BASE_URL,
       headers: req.headers,
     });
   } else {
