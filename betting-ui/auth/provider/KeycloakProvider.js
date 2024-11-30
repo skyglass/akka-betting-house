@@ -16,14 +16,9 @@ export const KeycloakProvider = ({ children }) => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       initKeycloak()
-        .then(auth => {
-          setAuthenticated(auth);
-          if (keycloak && auth) {
-            setUser({
-              name: keycloak.tokenParsed?.preferred_username,
-              email: keycloak.tokenParsed?.email,
-            });
-          }
+        .then(data => {
+          setAuthenticated(data.authenticated);
+          setUser(data.user);
           setInitialized(true);
         })
         .catch(err => console.error('Failed to initialize Keycloak', err));

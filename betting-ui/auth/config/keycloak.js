@@ -1,10 +1,9 @@
 import Keycloak from 'keycloak-js';
-import { config } from './Constants'
 
 const keycloakConfig = {
-  url: config.keycloak.BASE_URL, // Keycloak URL
-  realm: config.keycloak.REALM, // Keycloak Realm
-  clientId: config.keycloak.CLIENT_ID, // Keycloak OAUTH2 client ID
+  url: "http://localhost:8080", // Keycloak URL
+  realm: "betting-realm", // Keycloak Realm
+  clientId: "betting-app" // Keycloak OAUTH2 client ID
 };
 
 let keycloak;
@@ -15,19 +14,27 @@ if (typeof window !== 'undefined') {
 
 let isInitialized = false;
 
-export const initKeycloak = () => {
+export const initKeycloak = async () => {
   if (!isInitialized && keycloak) {
     isInitialized = true;
-    return keycloak
-      .init({ onLoad: 'login-required', checkLoginIframe: false })
-      .then(authenticated => authenticated)
-      .catch(err => {
-        isInitialized = false;
-        console.error('Failed to initialize Keycloak', err);
-        throw err;
-      });
+    try {
+      const authenticated = await keycloak.init({ onLoad: 'login-required', checkLoginIframe: false });
+      if (authenticated) {
+        return {
+          authenticated: true,
+          user: {
+            name: keycloak.tokenParsed?.preferred_username,
+            email: keycloak.tokenParsed?.email,
+          },
+        };
+      }
+    } catch (err) {
+      isInitialized = false;
+      console.error('Failed to initialize Keycloak', err);
+      throw err;
+    }
   }
-  return Promise.resolve(keycloak?.authenticated ?? false);
+  return { authenticated: false, user: null };
 };
 
 export const logout = () => {

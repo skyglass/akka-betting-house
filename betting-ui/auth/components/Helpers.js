@@ -1,9 +1,6 @@
-export const getKeycloak = () => {
-  return JSON.parse(localStorage.getItem('keycloak'))
-}
+import { keycloak } from '../config/keycloak';
 
 export const getCurrentUser = () => {
-  const keycloak = getKeycloak();
   return {
     username: keycloak.tokenParsed.preferred_username,
     email: keycloak.tokenParsed.email,
