@@ -1,7 +1,7 @@
 import Keycloak from 'keycloak-js';
 
 const keycloakConfig = {
-  url: "http://localhost:8080", // Keycloak URL
+  url: "http://localhost:8080", //process.env.KEYCLOAK_BASE_URL, // Keycloak URL
   realm: "betting-realm", // Keycloak Realm
   clientId: "betting-app" // Keycloak OAUTH2 client ID
 };
