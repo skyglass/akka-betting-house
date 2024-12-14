@@ -23,8 +23,8 @@ spring:
     timeout-per-shutdown-phase: 15s
 
   keycloak:
-    server-url: http://localhost:8080
-    server-external-url: http://localhost:8080
+    server-url: http://localhost/keycloak
+    server-external-url: http://localhost/keycloak
   security:
     oauth2:
       resourceserver:

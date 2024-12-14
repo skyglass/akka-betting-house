@@ -10,13 +10,13 @@ spring:
             readTimeout: 30000
             connectTimeout: 30000
           customer:
-            url: http://localhost/customer
+            url: http://localhost/api/customer
           market:
-            url: http://localhost/market
+            url: http://localhost/api/market
           betting:
-            url: http://localhost/betting
+            url: http://localhost/api/betting
           oauth2:
-            url: http://localhost:8080
+            url: http://localhost/keycloak
           kafka:
             url: http://localhost:8081/api/clusters/local
 

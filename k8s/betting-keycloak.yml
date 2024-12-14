@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: betting-keycloak
-        image: quay.io/keycloak/keycloak:26.0.3
+        image: quay.io/keycloak/keycloak:22.0.5
         args: ["start-dev"]
         ports:
         - containerPort: 8080
@@ -41,6 +41,8 @@ spec:
           value: "edge"
         - name: KC_PORT
           value: "8080"
+        - name: KC_HTTP_RELATIVE_PATH
+          value: "/keycloak"
 
 ---
 apiVersion: v1

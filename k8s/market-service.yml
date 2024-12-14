@@ -36,9 +36,9 @@ spec:
         - name: BPL_DEBUG_PORT
           value: "8004"
         - name: SPRING_KEYCLOAK_SERVER_URL
-          value: "http://betting-keycloak:8080"
+          value: "http://betting-keycloak:8080/keycloak"
         - name: SPRING_KEYCLOAK_SERVER_EXTERNAL_URL
-          value: "http://localhost:8080"
+          value: "http://localhost/keycloak"
         - name: GRPC_MARKET_SERVER_URL
           value: "betting-house:9002"
         lifecycle:

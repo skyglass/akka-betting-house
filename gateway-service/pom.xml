@@ -8,12 +8,6 @@
     </parent>
     <artifactId>gateway-service</artifactId>
 
-    <properties>
-        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-        <keycloak.version>22.0.1</keycloak.version>
-        <testkeycloak.version>2.3.0</testkeycloak.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

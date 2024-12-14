@@ -41,9 +41,9 @@ spec:
         - name: SPRING_REDIS_USERNAME
           value: "default"          
         - name: SPRING_KEYCLOAK_SERVER_URL
-          value: "http://betting-keycloak:8080"
+          value: "http://betting-keycloak:8080/keycloak"
         - name: SPRING_KEYCLOAK_SERVER_EXTERNAL_URL
-          value: "http://localhost:8080"
+          value: "http://localhost/keycloak"
 
         lifecycle:
           preStop:

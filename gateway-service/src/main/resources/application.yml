@@ -101,8 +101,8 @@ spring:
       namespace: stock:gateway
 
   keycloak:
-    server-url: http://localhost:8080
-    server-external-url: http://localhost:8080
+    server-url: http://localhost/keycloak
+    server-external-url: http://localhost/keycloak
   security:
     oauth2:
       resourceserver:
@@ -117,7 +117,7 @@ jwt:
       principal-attribute: preferred_username
 
 betting-app:
-  base-url: http://localhost:9000
+  base-url: http://localhost
   redirect-url: ${betting-app.base-url}/*
 
 resilience4j:

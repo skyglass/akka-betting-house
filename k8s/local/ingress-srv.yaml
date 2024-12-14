@@ -17,6 +17,13 @@ spec:
                 name: gateway
                 port:
                   number: 9000
+          - path: /keycloak/?(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: betting-keycloak
+                port:
+                  number: 8080
           - path: /?(.*)
             pathType: ImplementationSpecific
             backend:
