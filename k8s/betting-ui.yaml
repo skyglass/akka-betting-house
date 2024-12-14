@@ -17,11 +17,21 @@ spec:
           image: $CONTAINER_REGISTRY/betting-ui:$VERSION
           imagePullPolicy: IfNotPresent    
           env:
-            - name: BASE_URL
+            - name: NEXT_PUBLIC_BASE_URL
               valueFrom:
                 configMapKeyRef:
                   name: base-url-config
                   key: BASE_URL
+            - name: NEXT_PUBLIC_API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: base-url-config
+                  key: API_BASE_URL
+            - name: NEXT_PUBLIC_KEYCLOAK_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: base-url-config
+                  key: KEYCLOAK_BASE_URL
 ---
 apiVersion: v1
 kind: Service

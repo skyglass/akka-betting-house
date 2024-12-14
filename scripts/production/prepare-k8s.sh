@@ -11,9 +11,11 @@ fi
 
 set -u # or set -o nounset
 : "$BASE_URL"
+: "$API_BASE_URL"
+: "$KEYCLOAK_BASE_URL"
 
 kubectl delete configmap base-url-config
-kubectl create configmap base-url-config --from-literal=BASE_URL=$BASE_URL
+kubectl create configmap base-url-config --from-literal=BASE_URL=$BASE_URL --from-literal=API_BASE_URL=$API_BASE_URL --from-literal=KEYCLOAK_BASE_URL=$KEYCLOAK_BASE_URL
 
 kubectl apply -f 'https://strimzi.io/install/latest?namespace=default'
 
