@@ -3,10 +3,10 @@ import StripeCheckout from 'react-stripe-checkout';
 import Router from 'next/router';
 import useRequest from '../../hooks/use-request';
 
-const OrderShow = ({ order, currentUser }) => {
+const BetShow = ({ order, currentUser }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const { doRequest, errors } = useRequest({
-    url: '/api/payments',
+    url: '/api/betting',
     method: 'post',
     body: {
       orderId: order.id,
@@ -46,11 +46,11 @@ const OrderShow = ({ order, currentUser }) => {
   );
 };
 
-OrderShow.getInitialProps = async (context, client) => {
+BetShow.getInitialProps = async (context, client) => {
   const { orderId } = context.query;
   const { data } = await client.get(`/api/orders/${orderId}`);
 
   return { order: data };
 };
 
-export default OrderShow;
+export default BetShow;

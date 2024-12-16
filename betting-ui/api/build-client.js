@@ -6,7 +6,7 @@ export default ({ req }) => {
     // We are on the server
 
     return axios.create({
-      baseURL: config.url.API_BASE_URL,
+      baseURL: config.url.BASE_URL,
       headers: req.headers,
     });
   } else {
