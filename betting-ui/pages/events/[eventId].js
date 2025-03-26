@@ -1,34 +1,34 @@
 import Router from 'next/router';
 import useRequest from '../../hooks/use-request';
 
-const TicketShow = ({ ticket }) => {
+const EventShow = ({ event }) => {
   const { doRequest, errors } = useRequest({
-    url: '/api/orders',
+    url: '/api/betting',
     method: 'post',
     body: {
-      ticketId: ticket.id,
+      marketId: event.id,
     },
-    onSuccess: (order) =>
-      Router.push('/orders/[orderId]', `/orders/${order.id}`),
+    onSuccess: (bet) =>
+      Router.push('/bets/[betId]', `/bets/${bet.id}`),
   });
 
   return (
     <div>
-      <h1>{ticket.title}</h1>
-      <h4>Price: {ticket.price}</h4>
+      <h1>{event.title}</h1>
+      <h4>Price: {event.price}</h4>
       {errors}
       <button onClick={() => doRequest()} className="btn btn-primary">
-        Purchase
+        Place Bet
       </button>
     </div>
   );
 };
 
-TicketShow.getInitialProps = async (context, client) => {
-  const { ticketId } = context.query;
-  const { data } = await client.get(`/api/tickets/${ticketId}`);
+EventShow.getInitialProps = async (context, client) => {
+  const { eventId } = context.query;
+  const { data } = await client.get(`/api/market/${eventId}`);
 
-  return { ticket: data };
+  return { event: data };
 };
 
-export default TicketShow;
+export default EventShow;

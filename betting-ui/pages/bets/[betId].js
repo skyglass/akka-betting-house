@@ -3,20 +3,20 @@ import StripeCheckout from 'react-stripe-checkout';
 import Router from 'next/router';
 import useRequest from '../../hooks/use-request';
 
-const BetShow = ({ order, currentUser }) => {
+const BetShow = ({ bet, currentUser }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const { doRequest, errors } = useRequest({
     url: '/api/betting',
     method: 'post',
     body: {
-      orderId: order.id,
+      betId: bet.id,
     },
-    onSuccess: () => Router.push('/orders'),
+    onSuccess: () => Router.push('/bets'),
   });
 
   useEffect(() => {
     const findTimeLeft = () => {
-      const msLeft = new Date(order.expiresAt) - new Date();
+      const msLeft = new Date(bet.expiresAt) - new Date();
       setTimeLeft(Math.round(msLeft / 1000));
     };
 
@@ -26,31 +26,25 @@ const BetShow = ({ order, currentUser }) => {
     return () => {
       clearInterval(timerId);
     };
-  }, [order]);
+  }, [bet]);
 
   if (timeLeft < 0) {
-    return <div>Order Expired</div>;
+    return <div>Bet Expired</div>;
   }
 
   return (
     <div>
       Time left to pay: {timeLeft} seconds
-      <StripeCheckout
-        token={({ id }) => doRequest({ token: id })}
-        stripeKey="pk_test_JMdyKVvf8EGTB0Fl28GsN7YY"
-        amount={order.ticket.price * 100}
-        email={currentUser.email}
-      />
       {errors}
     </div>
   );
 };
 
 BetShow.getInitialProps = async (context, client) => {
-  const { orderId } = context.query;
-  const { data } = await client.get(`/api/orders/${orderId}`);
+  const { betId } = context.query;
+  const { data } = await client.get(`/api/betting/${betId}`);
 
-  return { order: data };
+  return { bet: data };
 };
 
 export default BetShow;

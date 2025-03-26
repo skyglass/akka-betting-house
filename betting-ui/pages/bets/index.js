@@ -1,10 +1,10 @@
-const OrderIndex = ({ orders }) => {
+const BetIndex = ({ bets }) => {
   return (
     <ul>
-      {orders.map((order) => {
+      {bets.map((bet) => {
         return (
-          <li key={order.id}>
-            {order.ticket.title} - {order.status}
+          <li key={bet.id}>
+            {bet.ticket.title} - {bet.status}
           </li>
         );
       })}
@@ -12,10 +12,10 @@ const OrderIndex = ({ orders }) => {
   );
 };
 
-OrderIndex.getInitialProps = async (context, client) => {
-  const { data } = await client.get('/api/orders');
+BetIndex.getInitialProps = async (context, client) => {
+  const { data } = await client.get('/api/betting');
 
-  return { orders: data };
+  return { bets: data };
 };
 
-export default OrderIndex;
+export default BetIndex;

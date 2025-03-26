@@ -11,6 +11,8 @@ import net.skycomposer.betting.market.grpc.client.MarketGrpcClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -21,6 +23,12 @@ public class MarketController {
   @GetMapping("/get-state/{marketId}")
   public MarketData getState(@PathVariable String marketId) {
     return marketGrpcClient.getState(marketId);
+  }
+
+  @GetMapping("/all")
+  public List<MarketData> getAllMarkets() {
+    log.info("Fetching all markets");
+    return marketGrpcClient.getAllMarkets();
   }
 
   @PostMapping("/open")

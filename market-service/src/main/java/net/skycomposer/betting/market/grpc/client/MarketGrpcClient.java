@@ -1,10 +1,14 @@
 package net.skycomposer.betting.market.grpc.client;
 
+import com.google.protobuf.Empty;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import net.skycomposer.betting.common.domain.dto.market.*;
 import net.skycomposer.betting.market.grpc.MarketProto;
 import net.skycomposer.betting.market.grpc.MarketServiceGrpc;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MarketGrpcClient {
@@ -18,6 +22,13 @@ public class MarketGrpcClient {
                 .build();
         MarketProto.MarketData grpcResponse = stub.getState(marketIdRequest);
         return createMarketData(grpcResponse);
+    }
+
+    public List<MarketData> getAllMarkets() {
+        MarketProto.MarketList grpcResponse = stub.getAllMarkets(Empty.getDefaultInstance());
+        return grpcResponse.getMarketsList().stream()
+                .map(this::createMarketData)
+                .collect(Collectors.toList());
     }
 
     public MarketResponse open(MarketData marketData) {

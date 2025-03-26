@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 option java_package = "net.skycomposer.betting.market.grpc";
 option java_outer_classname = "MarketProto";
 
@@ -46,6 +48,10 @@ message CloseMarketMessage {
 	int32 result = 2;
 }
 
+message MarketList {
+	repeated MarketData markets = 1;
+}
+
 service MarketService {
 
 	rpc Open(MarketData) returns (Response) {}
@@ -60,4 +66,6 @@ service MarketService {
 	rpc Cancel(CancelMarket) returns (Response) {}
 
 	rpc GetState(MarketId) returns (MarketData){}
+
+	rpc GetAllMarkets(google.protobuf.Empty) returns (MarketList) {}
 }

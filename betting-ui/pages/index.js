@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import withAuth from '../auth/middleware/withAuth';
 
-const LandingPage = ({ currentUser, tickets }) => {
-  const ticketList = tickets.map((ticket) => {
+const LandingPage = ({ currentUser, events }) => {
+  const eventList = events.map((event) => {
     return (
-      <tr key={ticket.id}>
-        <td>{ticket.title}</td>
-        <td>{ticket.price}</td>
+      <tr key={event.id}>
+        <td>{event.title}</td>
+        <td>{event.price}</td>
         <td>
-          <Link href="/betting-ui/pages/events/[eventId]" as={`/tickets/${ticket.id}`}>
+          <Link href="/betting-ui/pages/events/[eventId]" as={`/events/${event.id}`}>
             View
           </Link>
         </td>
@@ -18,7 +18,7 @@ const LandingPage = ({ currentUser, tickets }) => {
 
   return (
     <div>
-      <h1>Tickets</h1>
+      <h1>Events</h1>
       <table className="table">
         <thead>
           <tr>
@@ -27,16 +27,16 @@ const LandingPage = ({ currentUser, tickets }) => {
             <th>Link</th>
           </tr>
         </thead>
-        <tbody>{ticketList}</tbody>
+        <tbody>{eventList}</tbody>
       </table>
     </div>
   );
 };
 
 LandingPage.getInitialProps = async (context, client, currentUser) => {
-  const { data } = await client.get('/api/tickets');
+  const { data } = await client.get('/api/market');
 
-  return { tickets: data };
+  return { events: data };
 };
 
 export default withAuth(LandingPage);
