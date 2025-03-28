@@ -3,8 +3,8 @@ import LogoutButton from '../auth/components/LogoutButton';
 
 export default ({ currentUser }) => {
   const links = [
-    currentUser && { label: 'Sell Tickets', href: '/tickets/new' },
-    currentUser && { label: 'My Orders', href: '/orders' },
+    currentUser && { label: 'Place Bets', href: '/bets/new' },
+    currentUser && { label: 'My Bets', href: '/bets' },
   ]
     .filter((linkConfig) => linkConfig)
     .map(({ label, href }) => {
@@ -29,7 +29,7 @@ export default ({ currentUser }) => {
 
       <div>
         <LogoutButton />
-      </div>      
+      </div>
     </nav>
   );
 };

@@ -5,15 +5,19 @@ import akka.cluster.sharding.typed.scaladsl.{
   ClusterSharding,
   Entity
 }
-
+import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
+import akka.persistence.query.PersistenceQuery
+import akka.stream.scaladsl.Sink
 import akka.util.Timeout
-
+import com.google.protobuf.empty.Empty
 import example.betting.Market
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
 
-class MarketServiceImplSharding(implicit sharding: ClusterSharding)
+class MarketServiceImplSharding(
+    implicit sharding: ClusterSharding,
+    system: ActorSystem[_])
     extends MarketService {
 
   implicit val timeout: Timeout = 30.seconds
@@ -171,4 +175,42 @@ class MarketServiceImplSharding(implicit sharding: ClusterSharding)
 
   }
 
+  override def getAllMarkets(in: Empty): Future[MarketList] = {
+    val readJournal = PersistenceQuery(system)
+      .readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
+
+    val marketIdsFuture: Future[Seq[String]] =
+      readJournal.currentPersistenceIds().runWith(Sink.seq)
+
+    marketIdsFuture.flatMap { marketIds =>
+      val marketFutures = marketIds.map { marketId =>
+        val entityRef =
+          sharding.entityRefFor(Market.typeKey, marketId)
+        entityRef.ask(Market.GetState).mapTo[Market.CurrentState]
+      }
+
+      Future.sequence(marketFutures).map { marketStates =>
+        val markets = marketStates.map { state =>
+          val (marketId, fixture, odds, result, opensAt) = (
+            state.status.marketId,
+            state.status.fixture,
+            state.status.odds,
+            state.status.result,
+            state.status.opensAt)
+
+          MarketData(
+            marketId,
+            Some(
+              FixtureData(
+                fixture.id,
+                fixture.homeTeam,
+                fixture.awayTeam)),
+            Some(OddsData(odds.winHome, odds.winAway, odds.draw)),
+            MarketData.Result.fromValue(result),
+            opensAt)
+        }
+        MarketList(markets)
+      }
+    }
+  }
 }

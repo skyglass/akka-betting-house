@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import withAuth from '../auth/middleware/withAuth';
 
-const LandingPage = ({ currentUser, events }) => {
+const LandingPage = ({ currentUser, events = [] }) => {
   const eventList = events.map((event) => {
     return (
       <tr key={event.id}>
@@ -34,7 +34,7 @@ const LandingPage = ({ currentUser, events }) => {
 };
 
 LandingPage.getInitialProps = async (context, client, currentUser) => {
-  const { data } = await client.get('/api/market');
+  const { data } = await client.get('/api/market/all');
 
   return { events: data };
 };

@@ -3,6 +3,8 @@ syntax = "proto3";
 option java_package = "example.market.grpc";
 option java_outer_classname = "MarketProto";
 
+import "google/protobuf/empty.proto";
+
 message FixtureData {
  	string id = 1;
  	string homeTeam = 2;
@@ -46,6 +48,10 @@ message CloseMarketMessage {
 	int32 result = 2;
 }
 
+message MarketList {
+	repeated MarketData markets = 1;
+}
+
 service MarketService {
 
 	rpc Open(MarketData) returns (Response) {}
@@ -60,4 +66,6 @@ service MarketService {
 	rpc Cancel(CancelMarket) returns (Response) {}
 
 	rpc GetState(MarketId) returns (MarketData){}
+
+	rpc GetAllMarkets(google.protobuf.Empty) returns (MarketList) {}
 }
