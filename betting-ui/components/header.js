@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import LogoutButton from '../auth/components/LogoutButton';
+import {useKeycloak} from "../auth/provider/KeycloakProvider";
 
-export default ({ currentUser }) => {
+export default ({  }) => {
+  const { logout, user } = useKeycloak();
   const links = [
-    currentUser && { label: 'Place Bets', href: '/bets/new' },
-    currentUser && { label: 'My Bets', href: '/bets' },
+    user && { label: 'Place Bets', href: '/bets/new' },
+    user && { label: 'My Bets', href: '/bets' },
   ]
     .filter((linkConfig) => linkConfig)
     .map(({ label, href }) => {

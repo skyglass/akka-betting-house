@@ -1,18 +1,24 @@
 import axios from 'axios';
 import { config } from '../Constants'
 
-export default ({ req }) => {
+export default ({ req = {}, currentUser = {} }) => {
   if (typeof window === 'undefined') {
-    // We are on the server
 
     return axios.create({
       baseURL: config.url.BASE_URL,
-      headers: req.headers,
-    });
+      headers: {
+        ...req.headers,
+        Authorization: `Bearer ${currentUser.token}`
+      }
+    })
   } else {
     // We must be on the browser
     return axios.create({
       baseUrl: '/',
+      headers: {
+        ...req.headers,
+        Authorization: `Bearer ${currentUser.token}`, // Use token from Keycloak
+      },
     });
   }
 };
