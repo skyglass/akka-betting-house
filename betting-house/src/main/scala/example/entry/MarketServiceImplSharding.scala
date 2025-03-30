@@ -82,19 +82,22 @@ class MarketServiceImplSharding(
           Market.Fixture(id, homeTeam, awayTeam),
           Market.Odds(winHome, winAway, draw),
           result,
-          opensAt) = (
+          opensAt,
+          open) = (
           state.status.marketId,
           state.status.fixture,
           state.status.odds,
           state.status.result,
-          state.status.opensAt)
+          state.status.opensAt,
+          state.status.open)
 
         MarketData(
           marketId,
           Some(FixtureData(id, homeTeam, awayTeam)),
           Some(OddsData(winHome, winAway, draw)),
           MarketData.Result.fromValue(result),
-          opensAt)
+          opensAt,
+          open)
     }
 
   }
@@ -184,19 +187,22 @@ class MarketServiceImplSharding(
 
     marketIdsFuture.flatMap { marketIds =>
       val marketFutures = marketIds.map { marketId =>
+        val sanitizedMarketId =
+          marketId.replace(Market.typeKey.name + "|", "")
         val entityRef =
-          sharding.entityRefFor(Market.typeKey, marketId)
+          sharding.entityRefFor(Market.typeKey, sanitizedMarketId)
         entityRef.ask(Market.GetState).mapTo[Market.CurrentState]
       }
 
       Future.sequence(marketFutures).map { marketStates =>
         val markets = marketStates.map { state =>
-          val (marketId, fixture, odds, result, opensAt) = (
+          val (marketId, fixture, odds, result, opensAt, open) = (
             state.status.marketId,
             state.status.fixture,
             state.status.odds,
             state.status.result,
-            state.status.opensAt)
+            state.status.opensAt,
+            state.status.open)
 
           MarketData(
             marketId,
@@ -207,7 +213,8 @@ class MarketServiceImplSharding(
                 fixture.awayTeam)),
             Some(OddsData(odds.winHome, odds.winAway, odds.draw)),
             MarketData.Result.fromValue(result),
-            opensAt)
+            opensAt,
+            open)
         }
         MarketList(markets)
       }

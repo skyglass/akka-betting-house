@@ -127,6 +127,7 @@ public class MarketGrpcClient {
                 .result(grpcResponse.getResult() == null ? null :
                         MarketData.Result.valueOf(grpcResponse.getResult().toString()))
                 .opensAt(grpcResponse.getOpensAt())
+                .open(grpcResponse.getOpen())
                 .build();
 
         return marketData;

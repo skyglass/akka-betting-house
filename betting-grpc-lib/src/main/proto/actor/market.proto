@@ -28,6 +28,7 @@ message MarketData {
 	}
 	Result result = 4;
 	uint64 opensAt = 5;
+	bool open = 6;
 }
 
 message MarketId {

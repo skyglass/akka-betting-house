@@ -12,6 +12,7 @@ public class MarketData {
     private OddsData odds;
     private Result result;
     private long opensAt;
+    private boolean open;
 
     public enum Result {
         HOME_WINS(0),

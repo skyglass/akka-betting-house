@@ -2,7 +2,7 @@ import Link from 'next/link';
 import withAuth from '../auth/middleware/withAuth';
 import buildClient from "../api/build-client";
 import { useKeycloak } from '../auth/provider/KeycloakProvider';
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 
 const LandingPage = () => {
     const [events, setEvents] = useState([]);
@@ -11,7 +11,7 @@ const LandingPage = () => {
     useEffect(() => {
         if (user) {
             const fetchData = async () => {
-                const client = buildClient({ req: {}, currentUser: user });  // Pass empty object for client-side
+                const client = buildClient({ req: {}, currentUser: user });
                 const { data } = await client.get('/api/market/all');
                 setEvents(data);
             };
@@ -19,35 +19,68 @@ const LandingPage = () => {
         }
     }, [user]);
 
-  const eventList = events.map((event) => {
-    return (
-      <tr key={event.id}>
-        <td>{event.title}</td>
-        <td>{event.price}</td>
-        <td>
-          <Link href="/betting-ui/pages/events/[eventId]" as={`/events/${event.id}`}>
-            View
-          </Link>
-        </td>
-      </tr>
-    );
-  });
+    const getResultText = (open, result) => {
+        if (open) {
+            return "OPEN";
+        }
+        return result;
+    };
 
-  return (
-      <div>
-          <h1>Events</h1>
-          <table className="table">
-              <thead>
-              <tr>
-                  <th>Title</th>
-                  <th>Price</th>
-                  <th>Link</th>
-              </tr>
-              </thead>
-              <tbody>{eventList}</tbody>
-          </table>
-      </div>
-  );
+    const eventList = events.map((event) => {
+        return (
+            <tr key={event.marketId}>
+                {/* Market Fixture */}
+                <td>{event.fixture.homeTeam} vs {event.fixture.awayTeam}</td>
+
+                {/* Odds (Grouped) */}
+                <td>
+                    <table>
+                        <tbody>
+                        <tr>
+                            <td><strong>Home Win:</strong> {event.odds.winHome}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Away Win:</strong> {event.odds.winAway}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tie:</strong> {event.odds.tie}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </td>
+
+                {/* Result */}
+                <td>{getResultText(event.open, event.result)}</td>
+
+                {/* Link to view details */}
+                <td>
+                    <Link href={`/events/${event.marketId}`}>
+                        View
+                    </Link>
+                </td>
+            </tr>
+        );
+    });
+
+    return (
+        <div>
+            <h1>Events</h1>
+            <Link href="/events/new">
+                <button className="btn btn-primary" style={{ marginBottom: '10px' }}>Add Event</button>
+            </Link>
+            <table className="table">
+                <thead>
+                <tr>
+                    <th>Fixture</th>
+                    <th>Odds</th>
+                    <th>Result</th>
+                    <th>Link</th>
+                </tr>
+                </thead>
+                <tbody>{eventList}</tbody>
+            </table>
+        </div>
+    );
 };
 
 export default withAuth(LandingPage);
