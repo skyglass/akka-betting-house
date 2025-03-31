@@ -5,11 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WalletData {
-    private String walletId;
-    private int amount;
+public class WalletList {
+    private List<WalletData> wallets;
 }

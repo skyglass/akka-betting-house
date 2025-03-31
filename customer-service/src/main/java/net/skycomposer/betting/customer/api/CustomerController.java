@@ -10,6 +10,9 @@ import net.skycomposer.betting.common.domain.dto.customer.WalletData;
 import net.skycomposer.betting.common.domain.dto.customer.WalletResponse;
 import net.skycomposer.betting.customer.service.WalletService;
 
+import java.util.List;
+
+//remove
 @RestController
 @RequiredArgsConstructor
 public class CustomerController {
@@ -19,6 +22,11 @@ public class CustomerController {
   @GetMapping("/get-wallet/{walletId}")
   public WalletData findWalletById(@PathVariable String walletId) {
     return walletService.findWalletById(walletId);
+  }
+
+  @GetMapping("/all")
+  public List<WalletData> findAll() {
+    return walletService.findAll();
   }
 
   @PostMapping("/add-funds/{walletId}/{requestId}/{funds}")

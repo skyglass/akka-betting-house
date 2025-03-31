@@ -28,8 +28,13 @@ import akka.cluster.sharding.typed.scaladsl.{
   ClusterSharding,
   Entity
 }
+import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
+import akka.persistence.query.PersistenceQuery
+import akka.stream.scaladsl.Sink
 
-class WalletService(implicit sharding: ClusterSharding) {
+class WalletService(
+    implicit sharding: ClusterSharding,
+    system: ActorSystem[_]) {
 
   implicit val executionContext = ExecutionContext.global
 
@@ -38,8 +43,12 @@ class WalletService(implicit sharding: ClusterSharding) {
   // implicit val cargoFormat: RootJsonFormat[Wallet.UpdatedResponse] =
   // jsonFormat1(Wallet.UpdatedResponse)
   implicit val currentBalanceFormat
-      : RootJsonFormat[Wallet.CurrentBalance] =
-    jsonFormat1(Wallet.CurrentBalance)
+      : RootJsonFormat[Wallet.CurrentBalance] = jsonFormat1(
+    Wallet.CurrentBalance)
+  implicit val walletDataFormat: RootJsonFormat[WalletData] =
+    jsonFormat2(WalletData)
+  implicit val walletListFormat: RootJsonFormat[WalletList] =
+    jsonFormat1(WalletList)
 
   sharding.init(Entity(Wallet.typeKey)(entityContext =>
     Wallet(entityContext.entityId)))
@@ -119,14 +128,57 @@ class WalletService(implicit sharding: ClusterSharding) {
               val container =
                 sharding.entityRefFor(Wallet.typeKey, entityId)
 
-              val response: Future[Wallet.CurrentBalance] =
+              val response: Future[WalletData] =
                 container
                   .ask(Wallet.CheckFunds)
                   .mapTo[Wallet.CurrentBalance]
+                  .map(balance => WalletData(entityId, balance))
 
               complete(response)
+          }
+        },
+        path("all") {
+          get {
+            val readJournal = PersistenceQuery(system)
+              .readJournalFor[JdbcReadJournal](
+                JdbcReadJournal.Identifier)
+            val walletIdsFuture: Future[Seq[String]] =
+              readJournal
+                .currentPersistenceIds()
+                .runWith(Sink.seq)
+                .map(
+                  _.filter(_.startsWith(Wallet.typeKey.name + "|")))
+
+            val response: Future[WalletList] =
+              walletIdsFuture.flatMap {
+                walletIds =>
+                  val walletFutures: Seq[Future[WalletData]] =
+                    walletIds.map {
+                      walletId =>
+                        val sanitizedWalletId = walletId
+                          .replace(Wallet.typeKey.name + "|", "")
+                        val entityRef = sharding.entityRefFor(
+                          Wallet.typeKey,
+                          sanitizedWalletId)
+                        entityRef
+                          .ask(Wallet.CheckFunds)
+                          .mapTo[Wallet.CurrentBalance]
+                          .map(balance =>
+                            WalletData(sanitizedWalletId, balance))
+                    }
+                  Future.sequence(walletFutures).map(WalletList)
+              }
+
+            onSuccess(response) { walletList =>
+              complete(walletList)
+            }
           }
         })
     }
 
 }
+
+case class WalletData(
+    walletId: String,
+    balance: Wallet.CurrentBalance)
+case class WalletList(wallets: Seq[WalletData])

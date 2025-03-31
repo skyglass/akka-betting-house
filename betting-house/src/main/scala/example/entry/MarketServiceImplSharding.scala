@@ -10,7 +10,7 @@ import akka.persistence.query.PersistenceQuery
 import akka.stream.scaladsl.Sink
 import akka.util.Timeout
 import com.google.protobuf.empty.Empty
-import example.betting.Market
+import example.betting.{ Market, Wallet }
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
@@ -183,7 +183,10 @@ class MarketServiceImplSharding(
       .readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
 
     val marketIdsFuture: Future[Seq[String]] =
-      readJournal.currentPersistenceIds().runWith(Sink.seq)
+      readJournal
+        .currentPersistenceIds()
+        .runWith(Sink.seq)
+        .map(_.filter(_.startsWith(Market.typeKey.name + "|")))
 
     marketIdsFuture.flatMap { marketIds =>
       val marketFutures = marketIds.map { marketId =>
