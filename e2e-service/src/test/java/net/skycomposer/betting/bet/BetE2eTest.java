@@ -88,12 +88,12 @@ public class BetE2eTest extends E2eTest {
                 Duration.ofSeconds(10)
                 , () -> {
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
-                    while (walletData.getAmount() != 0) {
+                    while (walletData.getBalance() != 0) {
                         Thread.sleep(100);
                         walletData = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(walletData.getAmount(), equalTo(0));
-                }, () -> "Wallet amount is not equal to 0; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
+                    assertThat(walletData.getBalance(), equalTo(0));
+                }, () -> "Wallet amount is not equal to 0; current amount = " + customerTestHelper.findWalletById(walletId).getBalance()
         );
 
         BetResponse betResponse2 = betTestHelper.createBet(betId2, marketId, walletId, betStake2, betOdds2, betResult);
@@ -141,12 +141,12 @@ public class BetE2eTest extends E2eTest {
                 Duration.ofSeconds(10)
                 , () -> {
                     WalletData walletData = customerTestHelper.findWalletById(walletId);
-                    while (walletData.getAmount() != 100) {
+                    while (walletData.getBalance() != 100) {
                         Thread.sleep(100);
                         walletData = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(walletData.getAmount(), equalTo(100));
-                }, () -> "Wallet amount is not equal to 100; current amount = " + customerTestHelper.findWalletById(walletId).getAmount()
+                    assertThat(walletData.getBalance(), equalTo(100));
+                }, () -> "Wallet amount is not equal to 100; current amount = " + customerTestHelper.findWalletById(walletId).getBalance()
         );
 
     }

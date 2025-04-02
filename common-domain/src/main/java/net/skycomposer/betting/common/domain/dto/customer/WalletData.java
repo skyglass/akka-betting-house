@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class WalletData {
     private String walletId;
-    private int amount;
+    private Integer balance;
 }

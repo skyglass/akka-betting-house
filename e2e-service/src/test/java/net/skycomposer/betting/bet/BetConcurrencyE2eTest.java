@@ -141,12 +141,12 @@ public class BetConcurrencyE2eTest extends E2eTest {
                 Duration.ofSeconds(20)
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
-                    while (result.getAmount() != walletBeforeMarketCloseBalance) {
+                    while (result.getBalance() != walletBeforeMarketCloseBalance) {
                         Thread.sleep(1000);
                         result = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(result.getAmount(), equalTo(walletBeforeMarketCloseBalance));
-                }, () -> String.format("Available wallet funds after market update are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
+                    assertThat(result.getBalance(), equalTo(walletBeforeMarketCloseBalance));
+                }, () -> String.format("Available wallet funds after market update are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getBalance())
         );
 
 
@@ -157,13 +157,13 @@ public class BetConcurrencyE2eTest extends E2eTest {
                 Duration.ofSeconds(20)
                 , () -> {
                     var result = customerTestHelper.findWalletById(walletId);
-                    while (result.getAmount() != walletAfterMarketCloseBalance) {
-                        log.info("--> " + result.getAmount());
+                    while (result.getBalance() != walletAfterMarketCloseBalance) {
+                        log.info("--> " + result.getBalance());
                         Thread.sleep(1000);
                         result = customerTestHelper.findWalletById(walletId);
                     }
-                    assertThat(result.getAmount(), equalTo(walletAfterMarketCloseBalance));
-                }, () -> String.format("Available wallet funds after market close are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getAmount())
+                    assertThat(result.getBalance(), equalTo(walletAfterMarketCloseBalance));
+                }, () -> String.format("Available wallet funds after market close are incorrect for walletId = %s: amount = %d", walletId, customerTestHelper.findWalletById(walletId).getBalance())
         );
 
         log.info("Elapsed time: " + (Instant.now().toEpochMilli() - start));

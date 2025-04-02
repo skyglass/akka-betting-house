@@ -25,6 +25,8 @@ public class WebSecurityConfig {
 
                         .requestMatchers(HttpMethod.GET,"/", "/**").hasAnyRole(BETTING_USER, BETTING_MANAGER)
 
+                        .requestMatchers("/register/**").hasAnyRole(BETTING_USER, BETTING_MANAGER)
+
                         .requestMatchers("/", "/**").hasRole(BETTING_MANAGER)
 
                         .anyRequest().authenticated())

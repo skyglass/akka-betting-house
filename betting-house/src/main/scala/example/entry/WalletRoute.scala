@@ -132,7 +132,8 @@ class WalletService(
                 container
                   .ask(Wallet.CheckFunds)
                   .mapTo[Wallet.CurrentBalance]
-                  .map(balance => WalletData(entityId, balance))
+                  .map(balance =>
+                    WalletData(entityId, balance.amount))
 
               complete(response)
           }
@@ -164,7 +165,9 @@ class WalletService(
                           .ask(Wallet.CheckFunds)
                           .mapTo[Wallet.CurrentBalance]
                           .map(balance =>
-                            WalletData(sanitizedWalletId, balance))
+                            WalletData(
+                              sanitizedWalletId,
+                              balance.amount))
                     }
                   Future.sequence(walletFutures).map(WalletList)
               }
@@ -178,7 +181,5 @@ class WalletService(
 
 }
 
-case class WalletData(
-    walletId: String,
-    balance: Wallet.CurrentBalance)
+case class WalletData(walletId: String, balance: Int)
 case class WalletList(wallets: Seq[WalletData])

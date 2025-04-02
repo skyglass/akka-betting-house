@@ -15,6 +15,6 @@ public class WalletResponse {
 
     private String walletId;
 
-    private int currentAmount;
+    private Integer currentAmount;
 }
 

@@ -17,6 +17,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomerController {
 
+  private static final Integer DEFAULT_REGISTERED_CUSTOMER_AMOUNT = 100;
+
   private final WalletService walletService;
 
   @GetMapping("/get-wallet/{walletId}")
@@ -27,6 +29,11 @@ public class CustomerController {
   @GetMapping("/all")
   public List<WalletData> findAll() {
     return walletService.findAll();
+  }
+
+  @PostMapping("/register/{walletId}/{requestId}")
+  public WalletResponse addFunds(@PathVariable String walletId, @PathVariable String requestId) {
+    return walletService.addFunds(walletId, requestId, DEFAULT_REGISTERED_CUSTOMER_AMOUNT);
   }
 
   @PostMapping("/add-funds/{walletId}/{requestId}/{funds}")

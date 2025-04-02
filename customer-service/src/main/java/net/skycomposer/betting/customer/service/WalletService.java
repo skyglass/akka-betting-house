@@ -24,14 +24,14 @@ public class WalletService {
         return walletClient.findById(walletId);
     }
 
-    public WalletResponse addFunds(String walletId, String requestId, int funds) {
+    public WalletResponse addFunds(String walletId, String requestId, Integer funds) {
         WalletData walletData = findWalletById(walletId);
-        return new WalletResponse(walletClient.add(walletId, requestId, funds), walletId, walletData.getAmount() + funds);
+        return new WalletResponse(walletClient.add(walletId, requestId, funds), walletId, walletData.getBalance() + funds);
     }
 
-    public WalletResponse removeFunds(String walletId, String requestId, int funds) {
+    public WalletResponse removeFunds(String walletId, String requestId, Integer funds) {
         WalletData walletData = findWalletById(walletId);
-        return new WalletResponse(walletClient.remove(walletId, requestId, funds), walletId, walletData.getAmount() - funds);
+        return new WalletResponse(walletClient.remove(walletId, requestId, funds), walletId, walletData.getBalance() - funds);
     }
 
 }
