@@ -19,9 +19,6 @@ public interface BetClient {
     @ResponseStatus(HttpStatus.CREATED)
     BetResponse open(@RequestBody @Valid BetData betData);
 
-    @PostMapping("/settle")
-    BetResponse settle(@RequestBody @Valid SettleBetRequest request);
-
     @PostMapping("/cancel")
     BetResponse close(@RequestBody @Valid CancelBetRequest request);
 }

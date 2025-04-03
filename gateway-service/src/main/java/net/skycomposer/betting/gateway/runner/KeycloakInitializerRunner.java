@@ -51,6 +51,11 @@ public class KeycloakInitializerRunner implements CommandLineRunner {
         realmRepresentation.setRealm(BETTING_REALM_NAME);
         realmRepresentation.setEnabled(true);
         realmRepresentation.setRegistrationAllowed(true);
+        realmRepresentation.setResetPasswordAllowed(false);
+        realmRepresentation.setRememberMe(true);
+        realmRepresentation.setLoginWithEmailAllowed(false);
+        realmRepresentation.setDuplicateEmailsAllowed(false);
+        realmRepresentation.setVerifyEmail(false);
 
         // Client
         ClientRepresentation clientRepresentation = new ClientRepresentation();

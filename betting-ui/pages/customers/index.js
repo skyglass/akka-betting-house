@@ -32,7 +32,7 @@ const CustomerList = () => {
 
   return (
       <div>
-        <h1>Customer List</h1>
+        <h1>Players</h1>
         <table className="table">
           <thead>
           <tr>

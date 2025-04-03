@@ -26,7 +26,8 @@ export const initKeycloak = async () => {
           user: {
             name: keycloak.tokenParsed?.preferred_username,
             email: keycloak.tokenParsed?.email,
-            token: keycloak.token
+            token: keycloak.token,
+            tokenParsed: keycloak.tokenParsed
           },
         };
       }

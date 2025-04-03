@@ -58,6 +58,12 @@ const LandingPage = () => {
                         View
                     </Link>
                 </td>
+
+                <td>
+                    <Link href={`/bets/place/${event.marketId}`}>
+                        Place Bet
+                    </Link>
+                </td>
             </tr>
         );
     });
@@ -75,6 +81,7 @@ const LandingPage = () => {
                     <th>Odds</th>
                     <th>Result</th>
                     <th>Link</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>{eventList}</tbody>

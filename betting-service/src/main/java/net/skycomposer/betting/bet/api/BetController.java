@@ -32,12 +32,6 @@ public class BetController {
     return bettingGrpcClient.open(betData);
   }
 
-  @PostMapping("/settle")
-  public BetResponse settle(@RequestBody @Valid SettleBetRequest request) {
-    log.info("Settle bet {}", request);
-    return bettingGrpcClient.settle(request);
-  }
-
   @PostMapping("/cancel")
   public BetResponse close(@RequestBody @Valid CancelBetRequest request) {
     log.info("Cancel bet {}", request);

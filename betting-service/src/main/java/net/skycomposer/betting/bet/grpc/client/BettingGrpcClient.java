@@ -47,19 +47,6 @@ public class BettingGrpcClient {
                 .build();
     }
 
-    public BetResponse settle(SettleBetRequest request) {
-        BetProto.SettleMessage settleMessage = BetProto.SettleMessage.newBuilder()
-                .setBetId(request.getBetId())
-                .setResult(request.getResult())
-                .build();
-        BetProto.BetResponse response = stub.settle(settleMessage);
-        return BetResponse
-                .builder()
-                .message(response.getMessage())
-                .betId(request.getBetId())
-                .build();
-    }
-
     public BetResponse cancel(CancelBetRequest request) {
         BetProto.CancelMessage cancelMessage = BetProto.CancelMessage.newBuilder()
                 .setBetId(request.getBetId())

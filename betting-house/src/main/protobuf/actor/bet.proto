@@ -15,11 +15,6 @@ message Bet {
   bool fundsConfirmed = 8;
 }
 
-message SettleMessage {
-	string betId = 1;
-	int32 result = 2;
-}
-
 message BetId {
 	string betId = 1;
 }
@@ -37,7 +32,6 @@ message BetResponse {
 service BetService {
 
   rpc Open(Bet) returns (BetResponse){}
-  rpc Settle(SettleMessage) returns (BetResponse){}
   rpc Cancel(CancelMessage) returns (BetResponse) {}
   rpc GetState(BetId) returns (Bet) {}
 }

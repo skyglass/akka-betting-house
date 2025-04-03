@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import LogoutButton from '../auth/components/LogoutButton';
 import {useKeycloak} from "../auth/provider/KeycloakProvider";
+import {isAdminFunc} from "../auth/components/Helpers";
 
 export default ({  }) => {
-  const { logout, user } = useKeycloak();
+  const { user } = useKeycloak();
   const links = [
-    user && { label: 'Place Bets', href: '/bets/new' },
     user && { label: 'My Bets', href: '/bets' },
+    user && isAdminFunc(user) && { label: 'Players', href: '/customers' },
   ]
     .filter((linkConfig) => linkConfig)
     .map(({ label, href }) => {
