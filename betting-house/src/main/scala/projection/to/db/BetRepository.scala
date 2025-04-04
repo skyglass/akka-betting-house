@@ -4,12 +4,22 @@ import scalikejdbc._
 
 final case class StakePerResult(sum: Double, result: Int)
 
+final case class BetData(
+    betId: String,
+    walletId: String,
+    marketId: String,
+    marketName: String,
+    odds: Double,
+    stake: Int,
+    result: Int)
+
 trait BetRepository {
 
   def addBet(
       betId: String,
       walletId: String,
       marketId: String,
+      marketName: String,
       odds: Double,
       stake: Int,
       result: Int,
@@ -17,6 +27,14 @@ trait BetRepository {
   def getBetPerMarketTotalStake(
       marketId: String,
       session: ScalikeJdbcSession): List[StakePerResult]
+
+  def getBetsForMarket(
+      marketId: String,
+      session: ScalikeJdbcSession): List[BetData]
+
+  def getBetsForPlayer(
+      walletId: String,
+      session: ScalikeJdbcSession): List[BetData]
 
 }
 
@@ -26,6 +44,7 @@ class BetRepositoryImpl extends BetRepository {
       betId: String,
       walletId: String,
       marketId: String,
+      marketName: String,
       odds: Double,
       stake: Int,
       result: Int,
@@ -33,8 +52,8 @@ class BetRepositoryImpl extends BetRepository {
     session.db.withinTx { implicit dbSession =>
       sql"""
 			INSERT INTO
-			    bet_wallet_market (betId, walletId, marketId, odds, stake, result)
-				VALUES ($betId, $walletId, $marketId, $odds, $stake, $result)
+			    bet_wallet_market (betId, walletId, marketId, marketName, odds, stake, result)
+				VALUES ($betId, $walletId, $marketId, $marketName, $odds, $stake, $result)
 			   ON CONFLICT (betId) DO NOTHING
 			""".executeUpdate().apply()
     }
@@ -51,4 +70,45 @@ class BetRepositoryImpl extends BetRepository {
         .apply()
     }
   }
+
+  override def getBetsForMarket(
+      marketId: String,
+      session: ScalikeJdbcSession): List[BetData] = {
+    session.db.readOnly { implicit dbSession =>
+      sql"""SELECT betId, walletId, marketId, marketName, odds, stake, result FROM bet_wallet_market WHERE marketId = $marketId"""
+        .map(
+          rs =>
+            BetData(
+              rs.string("betId"),
+              rs.string("walletId"),
+              rs.string("marketId"),
+              rs.string("marketName"),
+              rs.double("odds"),
+              rs.int("stake"),
+              rs.int("result")))
+        .list
+        .apply()
+    }
+  }
+
+  override def getBetsForPlayer(
+      walletId: String,
+      session: ScalikeJdbcSession): List[BetData] = {
+    session.db.readOnly { implicit dbSession =>
+      sql"""SELECT betId, walletId, marketId, marketName, odds, stake, result FROM bet_wallet_market WHERE walletId = $walletId"""
+        .map(
+          rs =>
+            BetData(
+              rs.string("betId"),
+              rs.string("walletId"),
+              rs.string("marketId"),
+              rs.string("marketName"),
+              rs.double("odds"),
+              rs.int("stake"),
+              rs.int("result")))
+        .list
+        .apply()
+    }
+  }
+
 }

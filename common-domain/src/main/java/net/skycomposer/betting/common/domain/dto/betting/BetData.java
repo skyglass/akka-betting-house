@@ -14,6 +14,7 @@ import net.skycomposer.betting.common.domain.dto.market.OddsData;
 public class BetData {
     private String betId;
     private String marketId;
+    private String marketName;
     private String walletId;
     private double odds;
     private int stake;

@@ -7,6 +7,9 @@ option java_outer_classname = "BetProjectionProto";
 message MarketIdsBet {
 	string marketId = 1;
 }
+message WalletIdsBet {
+	string walletId = 1;
+}
 message SumStakes {
 	repeated SumStake sumstakes = 1;
 }
@@ -15,6 +18,22 @@ message SumStake{
 	int32 result = 2;
 }
 
+message BetData{
+	string betId = 1;
+	string walletId = 2;
+	string marketId = 3;
+	string marketName = 4;
+	double odds = 5;
+	int32 stake = 6;
+	int32 result = 7;
+}
+
+message BetDataList {
+	repeated BetData betDatas = 1;
+}
+
 service BetProjectionService {
 	rpc GetBetByMarket(MarketIdsBet) returns (SumStakes) {}
+	rpc GetBetsForMarket(MarketIdsBet) returns (BetDataList) {}
+	rpc GetBetsForPlayer(WalletIdsBet) returns (BetDataList) {}
 }

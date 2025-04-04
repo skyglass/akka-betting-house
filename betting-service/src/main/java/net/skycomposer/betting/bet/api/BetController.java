@@ -25,6 +25,16 @@ public class BetController {
     return bettingGrpcClient.getBetByMarket(marketId);
   }
 
+  @GetMapping("/get-bets-for-market/{marketId}")
+  public BetDataList getBetsForMarket(@PathVariable String marketId) {
+    return bettingGrpcClient.getBetsForMarket(marketId);
+  }
+
+  @GetMapping("/get-bets-for-player/{walletId}")
+  public BetDataList getBetsForPlayer(@PathVariable String walletId) {
+    return bettingGrpcClient.getBetsForPlayer(walletId);
+  }
+
   @PostMapping("/open")
   @ResponseStatus(HttpStatus.CREATED)
   public BetResponse open(@RequestBody @Valid BetData betData) {

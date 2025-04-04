@@ -8,11 +8,17 @@ message Bet {
   string betId = 1;
   string walletId = 2;
   string marketId = 3;
-  double odds = 4;
-  int32 stake = 5; 
-  int32 result = 6;
-  bool marketConfirmed = 7;
-  bool fundsConfirmed = 8;
+  string marketName = 4;
+  double odds = 5;
+  int32 stake = 6;
+  int32 result = 7;
+  bool marketConfirmed = 8;
+  bool fundsConfirmed = 9;
+}
+
+message SettleMessage {
+	string betId = 1;
+	int32 result = 2;
 }
 
 message BetId {

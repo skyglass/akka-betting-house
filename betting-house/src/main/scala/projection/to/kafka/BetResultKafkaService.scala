@@ -133,6 +133,7 @@ object BetResultKafkaService {
       betId,
       state.status.walletId,
       state.status.marketId,
+      state.status.marketName,
       state.status.odds,
       state.status.stake,
       state.status.result)

@@ -37,6 +37,22 @@ public class BettingGrpcClient {
         return createSumStakesData(grpcResponse);
     }
 
+    public BetDataList getBetsForMarket(String marketId) {
+        BetProjectionProto.MarketIdsBet marketIdRequest = BetProjectionProto.MarketIdsBet.newBuilder()
+                .setMarketId(marketId)
+                .build();
+        BetProjectionProto.BetDataList grpcResponse = projectionStub.getBetsForMarket(marketIdRequest);
+        return createBetDataList(grpcResponse);
+    }
+
+    public BetDataList getBetsForPlayer(String walletId) {
+        BetProjectionProto.WalletIdsBet walletIdRequest = BetProjectionProto.WalletIdsBet.newBuilder()
+                .setWalletId(walletId)
+                .build();
+        BetProjectionProto.BetDataList grpcResponse = projectionStub.getBetsForPlayer(walletIdRequest);
+        return createBetDataList(grpcResponse);
+    }
+
     public BetResponse open(BetData betData) {
         BetProto.Bet request = createGrpcRequest(betData);
         BetProto.BetResponse response = stub.open(request);
@@ -64,6 +80,7 @@ public class BettingGrpcClient {
         BetProto.Bet request = BetProto.Bet.newBuilder()
                 .setBetId(betData.getBetId())
                 .setMarketId(betData.getMarketId())
+                .setMarketName(betData.getMarketName())
                 .setWalletId(betData.getWalletId())
                 .setOdds(betData.getOdds())
                 .setStake(betData.getStake())
@@ -77,6 +94,7 @@ public class BettingGrpcClient {
         BetData betData = BetData.builder()
                 .betId(grpcResponse.getBetId())
                 .marketId(grpcResponse.getMarketId())
+                .marketName(grpcResponse.getMarketName())
                 .walletId(grpcResponse.getWalletId())
                 .odds(grpcResponse.getOdds())
                 .stake(grpcResponse.getStake())
@@ -102,6 +120,27 @@ public class BettingGrpcClient {
                 .build();
 
         return sumStakesData;
+    }
+
+    private BetDataList createBetDataList(BetProjectionProto.BetDataList grpcResponse) {
+        List<BetData> betDataList = new ArrayList<>();
+        for (BetProjectionProto.BetData betDataGrpc: grpcResponse.getBetDatasList()) {
+            BetData betData = BetData.builder()
+                    .betId(betDataGrpc.getBetId())
+                    .walletId(betDataGrpc.getWalletId())
+                    .marketId(betDataGrpc.getMarketId())
+                    .marketName(betDataGrpc.getMarketName())
+                    .odds(betDataGrpc.getOdds())
+                    .stake(betDataGrpc.getStake())
+                    .result(betDataGrpc.getResult())
+                    .build();
+            betDataList.add(betData);
+        }
+        BetDataList result = BetDataList.builder()
+                .betDataList(betDataList)
+                .build();
+
+        return result;
     }
 
 

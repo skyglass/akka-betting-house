@@ -52,16 +52,25 @@ class BetServiceImplSharding(sharding: ClusterSharding)
     def auxOpen(
         walletId: String,
         marketId: String,
+        marketName: String,
         odds: Double,
         stake: Int,
         result: Int)(replyTo: ActorRef[Bet.Response]) =
-      Bet.Open(walletId, marketId, odds, stake, result, replyTo)
+      Bet.Open(
+        walletId,
+        marketId,
+        marketName,
+        odds,
+        stake,
+        result,
+        replyTo)
 
     bet
       .ask(
         auxOpen(
           in.walletId,
           in.marketId,
+          in.marketName,
           in.odds,
           in.stake,
           in.result))
@@ -111,6 +120,7 @@ class BetServiceImplSharding(sharding: ClusterSharding)
             status.betId,
             status.walletId,
             status.marketId,
+            status.marketName,
             status.odds,
             status.stake,
             status.result,

@@ -45,6 +45,7 @@ object Bet {
   final case class Open(
       walletId: String,
       marketId: String,
+      marketName: String,
       odds: Double,
       stake: Int,
       result: Int, //0 winHome, 1 winAway, 2 draw
@@ -101,6 +102,7 @@ object Bet {
       betId: String,
       walletId: String,
       marketId: String,
+      marketName: String,
       odds: Double,
       stake: Int,
       result: Int,
@@ -111,6 +113,7 @@ object Bet {
     def empty(betId: String) =
       Status(
         betId,
+        "uninitialized",
         "uninitialized",
         "uninitialized",
         -1,
@@ -259,6 +262,7 @@ object Bet {
       betId: String,
       walletId: String,
       marketId: String,
+      marketName: String,
       odds: Double,
       stake: Int,
       result: Int)
@@ -286,12 +290,20 @@ object Bet {
 
   def handleEvents(state: State, event: Event): State =
     event match {
-      case Opened(betId, walletId, marketId, odds, stake, result) =>
+      case Opened(
+          betId,
+          walletId,
+          marketId,
+          marketName,
+          odds,
+          stake,
+          result) =>
         OpenState(
           Status(
             betId,
             walletId,
             marketId,
+            marketName,
             odds,
             stake,
             result,
@@ -340,6 +352,7 @@ object Bet {
       state.status.betId,
       command.walletId,
       command.marketId,
+      command.marketName,
       command.odds,
       command.stake,
       command.result)

@@ -6,6 +6,9 @@ option java_package = "betting.house.projection.proto";
 message MarketIdsBet {
 	string marketId = 1;
 }
+message WalletIdsBet {
+	string walletId = 1;
+}
 message SumStakes {
 	repeated SumStake sumstakes = 1;
 }
@@ -14,19 +17,36 @@ message SumStake{
 	int32 result = 2;
 }
 
+message BetData{
+	string betId = 1;
+	string walletId = 2;
+	string marketId = 3;
+	string marketName = 4;
+	double odds = 5;
+	int32 stake = 6;
+	int32 result = 7;
+}
+
+message BetDataList {
+	repeated BetData betDatas = 1;
+}
+
 service BetProjectionService {
 	rpc GetBetByMarket(MarketIdsBet) returns (SumStakes) {}
+	rpc GetBetsForMarket(MarketIdsBet) returns (BetDataList) {}
+	rpc GetBetsForPlayer(WalletIdsBet) returns (BetDataList) {}
 }
 
 message Status {
 	string betId = 1;
 	string walletId = 2;
 	string marketId = 3;
-	double odds = 4;
-	int32 stake = 5;
-	int32 result = 6;
-	bool marketConfirmed = 7;
-	bool fundsConfirmed = 8;
+	string marketName = 4;
+	double odds = 5;
+	int32 stake = 6;
+	int32 result = 7;
+	bool marketConfirmed = 8;
+	bool fundsConfirmed = 9;
 }
 
 message OpenState {
@@ -69,9 +89,10 @@ message Opened {
 	string betId = 1;
 	string walletId = 2;
 	string marketId = 3;
-	double odds = 4;
-	int32 stake = 5;
-	int32 result = 6;
+	string marketName = 4;
+	double odds = 5;
+	int32 stake = 6;
+	int32 result = 7;
 }
 
 message Cancelled {
