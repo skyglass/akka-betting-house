@@ -53,6 +53,7 @@ const NewBet = () => {
     const betData = {
       betId: uuidv4(),
       marketId: eventId,
+      marketName: `${event.fixture.homeTeam} vs ${event.fixture.awayTeam}`,
       walletId: user.name,
       result: selectedResult,
       stake: Number(stake),
@@ -75,26 +76,26 @@ const NewBet = () => {
   };
 
   return (
-      <div className="max-w-lg mx-auto mt-8 p-4 bg-white shadow-lg rounded-lg">
-        <h2 className="text-2xl font-bold mb-4">Place a Bet</h2>
+      <div className="container mt-5 p-4 bg-white shadow rounded">
+        <h2 className="h2 font-weight-bold mb-4">Place a Bet</h2>
 
         <form onSubmit={handleSubmit}>
           {/* Event Name (readonly) */}
           <div className="mb-4">
-            <label className="block font-semibold">Event Name___</label>
+            <label className="form-label font-weight-semibold">Event Name</label>
             <input
                 type="text"
                 value={`${event.fixture.homeTeam} vs ${event.fixture.awayTeam}`}
                 readOnly
-                className="w-full border p-2 rounded bg-gray-200"
+                className="form-control bg-light"
             />
           </div>
 
           {/* Result Selection */}
           <div className="mb-4">
-            <label className="block font-semibold">Result___</label>
+            <label className="form-label font-weight-semibold">Result</label>
             <select
-                className="w-full border p-2 rounded"
+                className="form-select"
                 value={selectedResult}
                 onChange={(e) => setSelectedResult(Number(e.target.value))}
             >
@@ -108,23 +109,23 @@ const NewBet = () => {
 
           {/* Odds (readonly) */}
           <div className="mb-4">
-            <label className="block font-semibold">Odds___</label>
+            <label className="form-label font-weight-semibold">Odds</label>
             <input
                 type="text"
                 value={selectedOdds}
                 readOnly
-                className="w-full border p-2 rounded bg-gray-200"
+                className="form-control bg-light"
             />
           </div>
 
           {/* Stake */}
           <div className="mb-4">
-            <label className="block font-semibold">Stake___</label>
+            <label className="form-label font-weight-semibold">Stake</label>
             <input
                 type="text"
                 value={stake}
                 onChange={handleStakeChange}
-                className="w-full border p-2 rounded"
+                className="form-control"
                 placeholder=" Enter stake (must be > 0)"
             />
           </div>
@@ -132,7 +133,7 @@ const NewBet = () => {
           {/* Submit Button */}
           <button
               type="submit"
-              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+              className="btn btn-primary w-100"
           >
             Place Bet
           </button>
